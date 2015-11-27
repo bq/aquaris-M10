@@ -1,0 +1,9 @@
+# 
+# (c) ARM Limited 2010-2011, 2013
+#
+
+SConscript( 'customer/sconscript' )
+if Glob('internal/sconscript'):
+	SConscript( 'internal/sconscript' )
+
+

@@ -1,0 +1,10 @@
+
+config CUSTOM_KERNEL_HEART_RATE_SENSOR
+	bool "CUSTOM_KERNEL_HEART_RATE_SENSOR"
+	help
+	  Kernel space heart rate sensor driver.
+
+config CUSTOM_KERNEL_HEART
+	bool "CUSTOM_KERNEL_HEART"
+	help
+	  Kernel space heart rate sensor driver.

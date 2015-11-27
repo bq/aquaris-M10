@@ -1,0 +1,20 @@
+toolchain/build.git (mtk-aarch64)      cf3b67de895d5c42585ce547344998bf37479489 Fix binutils-2.24 detection
+toolchain/gmp.git (mtk-aarch64)        d829ac796df826d4b3e25db98b453e9cc5bfc9e7 Add gmp-5.1.2.tar.xz.
+toolchain/mpfr.git (mtk-aarch64)       105025af267b7e98691c29e28ae1d08312a762ca Add mpfr-3.1.2.tar.xz.
+toolchain/mpc.git (mtk-aarch64)        835d16e92eed875638a8b5d552034c3b1aae045b add mpc-1.0.1.tar.gz
+toolchain/cloog.git (mtk-aarch64)      98972d5434ffcb4d11d2c81a46600e9a1cda9110 MinGW-w64 build fix (lacks ffs declaration)
+toolchain/isl.git (mtk-aarch64)        b05d4572958c5d497da793f3317084bab90c3033 add isl-0.11.1.tar.bz2 needed by GCC 4.8 with graphite
+toolchain/ppl.git (mtk-aarch64)        8ba1875b4c5341d902321761022a6d2a0b5b19a4 add ppl-1.0.tar.bz2
+toolchain/expat.git (mtk-aarch64)      40172a0ae9d40a068f1e1a48ffcf6a1ccf765ed5 expat package for building gdb-7.3
+toolchain/binutils.git (mtk-aarch64)   66e5591cf0d926dc6d04fbf863b0ec271f80d484 Ignore --fix-cortex-a53-843419 for gold.
+toolchain/gcc.git (mtk-aarch64)        6c39f0ed23b4369c7b4fa0771b3ef6f02abba59e Bump mtk release 20150409 for ca53 erratum 843419 fix.
+toolchain/gdb.git (mtk-aarch64)        24237bc8bc3001a82d6cd9685719c4679f721792 fix some build errors
+toolchain/python.git (mtk-aarch64)     e7c1f872ab41ac3209d0e100f5cd602ef80fc95a Fix python build inc_dirs[] and lib_dirs[] for linux/darwin
+toolchain/perl.git (mtk-aarch64)       1121daca35c6c692602621eab28d4de19f0b347d Add -Dcc_as_ld to configure
+toolchain/mclinker.git (mtk-aarch64)   7eaf69bfeba8d6530f7325a8982634a0f2616528 Merge branch 'master' of persistent-https://android.googlesource.com/toolchain/mclinker into aosp
+toolchain/clang.git (release_34)       3c402606ec3ba456d839279ff424e32fed9cdd80 [ndk][backport] Fix -mthumb resetting of target cpu
+toolchain/llvm.git (release_34)        75bff119c60708be0202f6481d1205220bc5c06d [ndk] Change the mangling method of unnamed functions.
+toolchain/compiler-rt.git (release_34) 58b052a77bfe91803b352adcb708e46c887a8294 Misc fixes for compiler_rt
+toolchain/clang.git (release_33)       dc17763dfc527ec82f088e6f1bdce2b2bb2ce5ec Fix to compile ARM atomic __*atomic_fetch_add/sub/or/...
+toolchain/llvm.git (release_33)        55eb0302f698d7733f83d8ff10c09397bb6b8159 Recognize -Ox options and set optimizatoin-level in bitcode wrapper header.
+toolchain/compiler-rt.git (release_33) c880feaaa8829681a025d29a33704c18e21e87e1 Misc fixes for compiler_rt

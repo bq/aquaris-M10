@@ -1,0 +1,4 @@
+
+config MTK_BMC056_MAG
+	bool "MTK_BMC056_MAG for MediaTek package"
+	default n

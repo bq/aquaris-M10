@@ -1,0 +1,4 @@
+
+config MTK_MXC400X_NEW
+	bool "MTK_MXC400X_NEW for MediaTek package"
+	default n

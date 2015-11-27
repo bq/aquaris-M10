@@ -1,0 +1,8 @@
+config MTK_VIBRATOR
+	tristate "MediaTek Vibrator driver"
+        default y
+	---help---
+	  Vibrator driver support for MediaTek SOC
+	  If you want to use MediaTek Vibrator driver, say Y or M here.
+	  If unsure, say N.
+

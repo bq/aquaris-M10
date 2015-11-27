@@ -1,0 +1,13 @@
+config MTK_EXTMD_CTRL
+	tristate "external MD control"
+	default n
+	help
+	  Config external md control module.
+
+
+config CUSTOM_KERNEL_EXTMD
+	string "external MD customization"
+	depends on MTK_EXTMD_CTRL
+	default ""
+	help
+	  Config external md type. Possible choice can be "mt6261" or "mt6261_x2".

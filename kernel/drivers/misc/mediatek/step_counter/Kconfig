@@ -1,0 +1,10 @@
+
+config CUSTOM_KERNEL_STEP_COUNTER
+	bool "CUSTOM_KERNEL_STEP_COUNTER"
+	help
+	  Kernel space step counter driver.
+
+config CUSTOM_KERNEL_SIGNIFICANT_MOTION_SENSOR
+	bool "CUSTOM_KERNEL_SIGNIFICANT_MOTION_SENSOR"
+	help
+	  Kernel space sigificant motion sensor driver.
