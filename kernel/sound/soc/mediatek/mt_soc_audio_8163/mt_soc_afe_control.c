@@ -2272,7 +2272,7 @@ bool SetHDMIConnection(uint32 ConnectionState, uint32 Input , uint32 Output)
 {
     if (ConnectionState)
     {
-        Afe_Set_Reg(AFE_HDMI_CONN0, Input, (0x7 << (3*Output)));
+        Afe_Set_Reg(AFE_HDMI_CONN0, (Input << (3*Input)), (0x7 << (3*Output)));
     }
     else
     {

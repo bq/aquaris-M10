@@ -2106,10 +2106,12 @@ failed_create_class:
 * Return: 0
 ***********************************************************************/
  static int __init tpd_driver_init(void) {
+ 	if((KERNEL_POWER_OFF_CHARGING_BOOT != get_boot_mode()) && (LOW_POWER_OFF_CHARGING_BOOT != get_boot_mode())){
         printk("MediaTek fts touch panel driver init\n");
         i2c_register_board_info(IIC_PORT, &fts_i2c_tpd, 1);
-	if(tpd_driver_add(&tpd_device_driver) < 0)
-       	TPD_DMESG("add fts driver failed\n");
+		if(tpd_driver_add(&tpd_device_driver) < 0)
+			TPD_DMESG("add fts driver failed\n");
+	}
 	 return 0;
  }
  
@@ -2123,9 +2125,11 @@ failed_create_class:
 ***********************************************************************/
  static void __exit tpd_driver_exit(void) 
  {
-        TPD_DMESG("MediaTek fts touch panel driver exit\n");
-	 //input_unregister_device(tpd->dev);
-	 tpd_driver_remove(&tpd_device_driver);
+ 	if((KERNEL_POWER_OFF_CHARGING_BOOT != get_boot_mode()) && (LOW_POWER_OFF_CHARGING_BOOT != get_boot_mode())){
+		TPD_DMESG("MediaTek fts touch panel driver exit\n");
+		//input_unregister_device(tpd->dev);
+		tpd_driver_remove(&tpd_device_driver);
+	}
  }
  
  module_init(tpd_driver_init);
