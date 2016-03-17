@@ -299,10 +299,10 @@ struct fts_ts_data {
 #define CHANGE_THRESHOLD_IN_CHARGE
 
 static unsigned char CTPM_FW[] = {
-	#include "FT_Upgrade_App_0x1B.i"
+	#include "FT_Upgrade_App_0x1F.i"
 };
 static unsigned char CTPM_FW_BTN[] = {
-	#include "FT_Upgrade_App_0x87.i"
+	#include "FT_Upgrade_App_0x8B.i"
 };
 
 extern struct i2c_client *fts_i2c_client;

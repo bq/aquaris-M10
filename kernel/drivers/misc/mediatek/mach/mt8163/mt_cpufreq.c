@@ -136,19 +136,19 @@ extern unsigned int mt_get_cpu_freq(void);
 /* for DVFS OPP table */
 
 #if 1 /* mt8163 */
-#define CPU_DVFS_SB_FREQ0 (1495000) /* KHz */
-#define CPU_DVFS_SB_FREQ1 (1300000) /* KHz */
-#define CPU_DVFS_SB_FREQ2 (1144000) /* KHz */
-#define CPU_DVFS_SB_FREQ3 (988000) /* KHz */
+#define CPU_DVFS_SB_FREQ0 (1500000) /* KHz */
+#define CPU_DVFS_SB_FREQ1 (1350000) /* KHz */
+#define CPU_DVFS_SB_FREQ2 (1200000) /* KHz */
+#define CPU_DVFS_SB_FREQ3 (1050000) /* KHz */
 #define CPU_DVFS_SB_FREQ4 (871000) /* KHz */
 #define CPU_DVFS_SB_FREQ5 (741000) /* KHz */
 #define CPU_DVFS_SB_FREQ6 (624000) /* KHz */
 #define CPU_DVFS_SB_FREQ7 (600000) /* KHz */
 
 #define CPU_DVFS_FREQ0 (1300000) /* KHz */
-#define CPU_DVFS_FREQ1 (1196000) /* KHz */
-#define CPU_DVFS_FREQ2 (1092000) /* KHz */
-#define CPU_DVFS_FREQ3 (988000) /* KHz */
+#define CPU_DVFS_FREQ1 (1216000) /* KHz */
+#define CPU_DVFS_FREQ2 (1133000) /* KHz */
+#define CPU_DVFS_FREQ3 (1050000) /* KHz */
 #define CPU_DVFS_FREQ4 (871000) /* KHz */
 #define CPU_DVFS_FREQ5 (741000) /* KHz */
 #define CPU_DVFS_FREQ6 (624000) /* KHz */
@@ -1093,26 +1093,26 @@ static struct mt_cpu_dvfs *id_to_cpu_dvfs(enum mt_cpu_dvfs_id id)
 #if 1 /* mt8163 */
 /* CPU LEVEL 0, SB, 1.5GHz segment */
 static struct mt_cpu_freq_info opp_tbl_e1_0[] = {
-    OP(CPU_DVFS_SB_FREQ0, 1250000),
-    OP(CPU_DVFS_SB_FREQ1, 1210000),
-    OP(CPU_DVFS_SB_FREQ2, 1170000),
-    OP(CPU_DVFS_SB_FREQ3, 1140000),
-    OP(CPU_DVFS_SB_FREQ4, 1110000),
-    OP(CPU_DVFS_SB_FREQ5, 1080000),
-    OP(CPU_DVFS_SB_FREQ6, 1060000),
-    OP(CPU_DVFS_SB_FREQ7, 1050000),
+    OP(CPU_DVFS_SB_FREQ0, 1300000),
+    OP(CPU_DVFS_SB_FREQ1, 1250000),
+    OP(CPU_DVFS_SB_FREQ2, 1200000),
+    OP(CPU_DVFS_SB_FREQ3, 1150000),
+    OP(CPU_DVFS_SB_FREQ4, 1150000),
+    OP(CPU_DVFS_SB_FREQ5, 1150000),
+    OP(CPU_DVFS_SB_FREQ6, 1150000),
+    OP(CPU_DVFS_SB_FREQ7, 1150000),
 };
 
 /* CPU LEVEL 1, FY, 1.3GHz segment */
 static struct mt_cpu_freq_info opp_tbl_e1_1[] = {
-    OP(CPU_DVFS_FREQ0, 1250000),
-    OP(CPU_DVFS_FREQ1, 1210000),
-    OP(CPU_DVFS_FREQ2, 1170000),
-    OP(CPU_DVFS_FREQ3, 1140000),
-    OP(CPU_DVFS_FREQ4, 1110000),
-    OP(CPU_DVFS_FREQ5, 1080000),
-    OP(CPU_DVFS_FREQ6, 1060000),
-    OP(CPU_DVFS_FREQ7, 1050000),
+    OP(CPU_DVFS_FREQ0, 1300000),
+    OP(CPU_DVFS_FREQ1, 1250000),
+    OP(CPU_DVFS_FREQ2, 1200000),
+    OP(CPU_DVFS_FREQ3, 1150000),
+    OP(CPU_DVFS_FREQ4, 1150000),
+    OP(CPU_DVFS_FREQ5, 1150000),
+    OP(CPU_DVFS_FREQ6, 1150000),
+    OP(CPU_DVFS_FREQ7, 1150000),
 };
 #else
 /* CPU LEVEL 0, 2GHz segment (useless) */
@@ -1734,10 +1734,10 @@ static void set_cur_freq(struct mt_cpu_dvfs *p, unsigned int cur_khz, unsigned i
         cur_volt = p->ops->get_cur_volt(p);
         switch (p->cpu_level) {
             case CPU_LEVEL_0:
-				mainpll_volt_idx = CPU_DVFS_SB_FREQ2;
+				mainpll_volt_idx = 2; /*CPU_DVFS_SB_FREQ2*/
 				break;
             case CPU_LEVEL_1:
-                mainpll_volt_idx = CPU_DVFS_FREQ2;
+                mainpll_volt_idx = 2; /*CPU_DVFS_FREQ2*/
                 break;
             default:
                 mainpll_volt_idx = 1;
@@ -2913,25 +2913,25 @@ static int setup_power_table(struct mt_cpu_dvfs *p)
     }
 
     /* sort power table */
-    for (i = p->nr_opp_tbl * possible_cpu; i > 0; i--) {
-        for (j = 1; j <= i; j++) {
-            if (p->power_tbl[j - 1].cpufreq_power < p->power_tbl[j].cpufreq_power) {
-                struct mt_cpu_power_info tmp;
+	for (i = p->nr_opp_tbl * possible_cpu; i > 0; i--) {
+		for (j = 1; j < i; j++) {
+			if (p->power_tbl[j - 1].cpufreq_power < p->power_tbl[j].cpufreq_power) {
+				struct mt_cpu_power_info tmp;
 
-                tmp.cpufreq_khz                 = p->power_tbl[j - 1].cpufreq_khz;
-                tmp.cpufreq_ncpu                = p->power_tbl[j - 1].cpufreq_ncpu;
-                tmp.cpufreq_power               = p->power_tbl[j - 1].cpufreq_power;
+				tmp.cpufreq_khz                 = p->power_tbl[j - 1].cpufreq_khz;
+				tmp.cpufreq_ncpu                = p->power_tbl[j - 1].cpufreq_ncpu;
+				tmp.cpufreq_power               = p->power_tbl[j - 1].cpufreq_power;
 
-                p->power_tbl[j - 1].cpufreq_khz   = p->power_tbl[j].cpufreq_khz;
-                p->power_tbl[j - 1].cpufreq_ncpu  = p->power_tbl[j].cpufreq_ncpu;
-                p->power_tbl[j - 1].cpufreq_power = p->power_tbl[j].cpufreq_power;
+				p->power_tbl[j - 1].cpufreq_khz   = p->power_tbl[j].cpufreq_khz;
+				p->power_tbl[j - 1].cpufreq_ncpu  = p->power_tbl[j].cpufreq_ncpu;
+				p->power_tbl[j - 1].cpufreq_power = p->power_tbl[j].cpufreq_power;
 
-                p->power_tbl[j].cpufreq_khz     = tmp.cpufreq_khz;
-                p->power_tbl[j].cpufreq_ncpu    = tmp.cpufreq_ncpu;
-                p->power_tbl[j].cpufreq_power   = tmp.cpufreq_power;
-            }
-        }
-    }
+				p->power_tbl[j].cpufreq_khz     = tmp.cpufreq_khz;
+				p->power_tbl[j].cpufreq_ncpu    = tmp.cpufreq_ncpu;
+				p->power_tbl[j].cpufreq_power   = tmp.cpufreq_power;
+			}
+		}
+	}
 
     /* dump power table */
     for (i = 0; i < p->nr_opp_tbl * possible_cpu; i++) {
@@ -5330,4 +5330,3 @@ module_exit(_mt_cpufreq_pdrv_exit);
 
 MODULE_DESCRIPTION("MediaTek CPU DVFS Driver v0.3");
 MODULE_LICENSE("GPL");
-

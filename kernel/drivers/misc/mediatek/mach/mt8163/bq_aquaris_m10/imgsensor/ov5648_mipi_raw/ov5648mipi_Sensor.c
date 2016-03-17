@@ -61,7 +61,7 @@ static imgsensor_info_struct imgsensor_info = {
         .grabwindow_width = 1280,        //record different mode's width of grabwindow
         .grabwindow_height = 960,        //record different mode's height of grabwindow
         /*     following for MIPIDataLowPwr2HighSpeedSettleDelayCount by different scenario    */
-        .mipi_data_lp2hs_settle_dc = 85,//unit , ns
+        .mipi_data_lp2hs_settle_dc = 40,//unit , ns
         /*     following for GetDefaultFramerateByScenario()    */
         .max_framerate = 300,
     },
@@ -73,7 +73,7 @@ static imgsensor_info_struct imgsensor_info = {
         .starty = 6,
         .grabwindow_width = 2560,
         .grabwindow_height = 1920,
-        .mipi_data_lp2hs_settle_dc = 85,//unit , ns
+        .mipi_data_lp2hs_settle_dc =40,//unit , ns
         .max_framerate = 150,
     },
     .cap1 = {
@@ -84,7 +84,7 @@ static imgsensor_info_struct imgsensor_info = {
         .starty = 2,
         .grabwindow_width = 2560,
         .grabwindow_height = 1920,
-        .mipi_data_lp2hs_settle_dc = 85,//unit , ns
+        .mipi_data_lp2hs_settle_dc = 40,//unit , ns
         .max_framerate = 150,
     },
     .normal_video = {
@@ -95,7 +95,7 @@ static imgsensor_info_struct imgsensor_info = {
         .starty = 2,
         .grabwindow_width = 1280,
         .grabwindow_height = 960,
-        .mipi_data_lp2hs_settle_dc = 85,//unit , ns
+        .mipi_data_lp2hs_settle_dc = 40,//unit , ns
         .max_framerate = 300,
     },
     .hs_video = {
@@ -106,7 +106,7 @@ static imgsensor_info_struct imgsensor_info = {
         .starty = 0,
         .grabwindow_width = 1920,
         .grabwindow_height = 1080,
-        .mipi_data_lp2hs_settle_dc = 85,//unit , ns
+        .mipi_data_lp2hs_settle_dc = 40,//unit , ns
         .max_framerate = 300,
     },
     .slim_video = {
@@ -117,7 +117,7 @@ static imgsensor_info_struct imgsensor_info = {
         .starty = 0,
         .grabwindow_width = 1280,
         .grabwindow_height = 720,
-        .mipi_data_lp2hs_settle_dc = 85,//unit , ns
+        .mipi_data_lp2hs_settle_dc = 40,//unit , ns
         .max_framerate = 300,
     },
     .margin = 4,            //sensor framelength & shutter margin
@@ -139,7 +139,7 @@ static imgsensor_info_struct imgsensor_info = {
     .isp_driving_current = ISP_DRIVING_2MA, //mclk driving current
     .sensor_interface_type = SENSOR_INTERFACE_TYPE_MIPI,//sensor_interface_type
     .mipi_sensor_type = MIPI_OPHY_NCSI2, //0,MIPI_OPHY_NCSI2;  1,MIPI_OPHY_CSI2
-    .mipi_settle_delay_mode = MIPI_SETTLEDELAY_AUTO,//0,MIPI_SETTLEDELAY_AUTO; 1,MIPI_SETTLEDELAY_MANNUAL
+    .mipi_settle_delay_mode = 1,//0,MIPI_SETTLEDELAY_AUTO; 1,MIPI_SETTLEDELAY_MANNUAL
     .sensor_output_dataformat = SENSOR_OUTPUT_FORMAT_RAW_B,//sensor output first pixel color
     .mclk = 24,//mclk value, suggest 24 or 26 for 24Mhz or 26Mhz
     .mipi_lane_num = SENSOR_MIPI_2_LANE,//mipi lane num

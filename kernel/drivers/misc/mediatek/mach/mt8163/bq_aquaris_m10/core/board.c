@@ -1059,18 +1059,20 @@ EXPORT_SYMBOL(mt_wifi_power_off);
         .cmd_edge             = MSDC_SMPL_FALLING,
         .rdata_edge           = MSDC_SMPL_FALLING,
         .wdata_edge           = MSDC_SMPL_FALLING,
-        .clk_drv              = 3,
-        .cmd_drv              = 3,
-        .dat_drv              = 3,
-        .clk_drv_sd_18        = 3,         /* sdr104 mode */
-        .cmd_drv_sd_18        = 2,
-        .dat_drv_sd_18        = 2,
-        .clk_drv_sd_18_sdr50  = 3,         /* sdr50 mode */
-        .cmd_drv_sd_18_sdr50  = 2,
-        .dat_drv_sd_18_sdr50  = 2,
-        .clk_drv_sd_18_ddr50  = 3,         /* ddr50 mode */
-        .cmd_drv_sd_18_ddr50  = 2,
-        .dat_drv_sd_18_ddr50  = 2,
+/*start-151215-xmyyq-increase sd card driver level*/
+        .clk_drv              = 4,
+        .cmd_drv              = 4,
+        .dat_drv              = 4,
+        .clk_drv_sd_18        = 4,         /* sdr104 mode */
+        .cmd_drv_sd_18        = 4,
+        .dat_drv_sd_18        = 4,
+        .clk_drv_sd_18_sdr50  = 4,         /* sdr50 mode */
+        .cmd_drv_sd_18_sdr50  = 4,
+        .dat_drv_sd_18_sdr50  = 4,
+        .clk_drv_sd_18_ddr50  = 4,         /* ddr50 mode */
+        .cmd_drv_sd_18_ddr50  = 4,
+        .dat_drv_sd_18_ddr50  = 4,
+/*end-151215-xmyyq-increase sd card driver level*/
         .data_pins            = 4,
         .data_offset          = 0,
 #ifdef FPGA_PLATFORM

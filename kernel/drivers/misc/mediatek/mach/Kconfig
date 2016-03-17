@@ -45,4 +45,8 @@ config MAX_DRAM_SIZE_SUPPORT
 	  Notice that the maximum DRAM size is including the memory size
 	  reserved for the modem and the PMEM.
 
+config SOIDLE_IDLE_ENABLE
+	bool "soidle idle function enable"
+	default y
+
 endmenu

@@ -760,7 +760,7 @@ static int mt_fh_hal_dfs_vencpll(unsigned int target_freq)
 
         wait_dds_stable(pll_dds, g_reg_mon[pll_id], 100);
 	}
-
+#if 0
     switch(target_freq){
         #if 0
     	case VENCPLL_TARGETVCO_1:
@@ -775,7 +775,7 @@ static int mt_fh_hal_dfs_vencpll(unsigned int target_freq)
     		return 0;
     		//break;
 	};
-
+#endif
 	FH_MSG("target dds: 0x%x",target_dds);
 
 	mt_fh_hal_dvfs(pll_id, target_dds);
