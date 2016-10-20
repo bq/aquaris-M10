@@ -1,0 +1,9 @@
+
+config MTK_BMM150
+	bool "MTK_BMM150 for MediaTek package"
+	default n
+	help
+	  It support different magnetometer sensor.
+          If this option is set,
+	  it will support
+          MTK_BMM150 magnetometer.

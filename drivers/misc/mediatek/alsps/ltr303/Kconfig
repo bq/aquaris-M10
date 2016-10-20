@@ -1,0 +1,14 @@
+
+config MTK_LTR303
+	bool "MTK_LTR303 for MediaTek package"
+	default n
+	help
+	It support different type sensor
+	in this platform. If this option
+	is set, it will support ambient
+	and light sensor MTK_LTR303.
+
+config LTRKARIN
+        bool "Calibration factor for LTR sensor in Karin"
+        default n
+

@@ -1,0 +1,585 @@
+/*************************
+ * Customized Battery Setting dtsi file
+*************************/
+&bat_comm {
+	/* cust_charging.h */
+	/* stop charging while in talking mode */
+	stop_charging_in_takling = <1>;
+	talking_recharge_voltage = <3800>;
+	talking_sync_time = <60>;
+
+	/* Battery Temperature Protection */
+	mtk_temperature_recharge_support = <1>;
+	max_charge_temperature = <45>;
+	max_charge_temperature_minus_x_degree = <41>;
+	min_charge_temperature = <(-5)>;
+	min_charge_temperature_plus_x_degree = <6>;
+	err_charge_temperature = <0xff>;
+
+	/* Linear Charging Threshold */
+	v_pre2cc_thres = <3400>;	/* unit: mV */
+	v_cc2topoff_thres = <4050>;
+	recharging_voltage = <4110>;
+	charging_full_current = <150>;	/* unit: mA */
+
+	/* Charging Current Setting */
+	config_usb_if = <0>;
+	usb_charger_current_suspend = <0>;	/* Unit: 0.01 mA */
+	usb_charger_current_unconfigured = <7000>;	/* Unit: 0.01 mA */
+	usb_charger_current_configured = <50000>;	/* Unit: 0.01 mA */
+
+	usb_charger_current = <50000>;	/* Unit: 0.01 mA */
+	ac_charger_current = <205600>;	/* Unit: 0.01 mA */
+
+	non_std_ac_charger_current = <50000>;	/* Unit: 0.01 mA */
+	non_std_ac_charger_charger_current = <110000>; /* Unit: 0.01 mA */
+
+	charging_host_charger_current = <65000>;	/* Unit: 0.01 mA */
+	apple_0_5a_charger_current = <50000>;	/* Unit: 0.01 mA */
+	apple_1_0a_charger_current = <65000>;	/* Unit: 0.01 mA */
+	apple_2_1a_charger_current = <80000>;	/* Unit: 0.01 mA */
+
+	/* charger error check */
+	bat_low_temp_protect_enable = <1>;
+	v_charger_enable = <0>;	/* 1:on , 0:off */
+	v_charger_max = <6000>;	/* unit: mV */
+	v_charger_min = <4400>;
+
+	/*  Tracking TIME */
+	onehundred_percent_tracking_time = <10>;	/* Unit: second */
+	npercent_tracking_time = <20>;	/* Unit: second */
+	sync_to_real_tracking_time = <60>;	/* Unit: second */
+	v_0percent_tracking = <3400>;	/* Unit: mV */
+	system_off_voltage = <3400>;	/* Unit: mV */
+
+	/* High battery support */
+	high_battery_voltage_support = <1>;
+};
+
+&bat_meter {
+	/* cust_battery_meter.h */
+	/* ADC resistor  */
+	r_bat_sense = <4>;
+	r_i_sense = <4>;
+	r_charger_1 = <330>;
+	r_charger_2 = <39>;
+	temperature_t0 = <110>;
+	temperature_t1 = <0>;
+	temperature_t2 = <25>;
+	temperature_t3 = <50>;
+	temperature_t = <255>;	/* this should be fixed, never change the value */
+	fg_meter_resistance = <0>;
+
+	/* Qmax for 0mA */
+	q_max_pos_50 = <3930>;
+	q_max_pos_25 = <3930>;
+	q_max_pos_0 = <3930>;
+	q_max_neg_10 = <3900>;
+	/* Qmax for 600mA, said high current */
+	q_max_pos_50_h_current = <3930>;
+	q_max_pos_25_h_current = <3930>;
+	q_max_pos_0_h_current = <3930>;
+	q_max_neg_10_h_current = <3930>;
+	/* Discharge percentage, 1: D5, 0: D2 */
+	oam_d5 = <1>;
+
+	change_tracking_point = <1>;
+	/* SW OCV tracking setting */
+	cust_tracking_point = <14>;
+	cust_r_sense = <68>;
+	cust_hw_cc = <0>;
+	aging_tuning_value = <103>;
+	cust_r_fg_offset = <0>;
+	ocv_board_compesate = <0>;
+	r_fg_board_base = <1000>;
+	r_fg_board_slope = <1000>;
+	car_tune_value = <84>;
+	system_off_voltage = <3400>;	/* Unit: mV */
+
+	/* HW Fuel gague  */
+	current_detect_r_fg = <(-1)>;	/* Unit: mA */
+	minerroroffset = <1000>;
+	fg_vbat_average_size = <18>;
+	r_fg_value = <0>;	/* Unit: mOhm */
+
+	cust_poweron_delta_capacity_tolrance = <80>;
+	cust_poweron_low_capacity_tolrance = <5>;
+	cust_poweron_max_vbat_tolrance = <70>;
+	cust_poweron_delta_vbat_tolrance = <60>;
+	cust_poweron_delta_hw_sw_ocv_capacity_tolrance = <10>;
+
+	/* Fixed battery temperature */
+	fixed_tbat_25 = <0>;
+	/* Dynamic change wake up period of battery thread when suspend */
+	vbat_normal_wakeup = <3600>;	/* Unit: mV */
+	vbat_low_power_wakeup = <3500>;	/* Unit: mV */
+	normal_wakeup_period = <5400>;	/* Unit: second */
+	low_power_wakeup_period = <300>;	/* Unit: second */
+	close_poweroff_wakeup_period = <30>;	/* Unit: second */
+
+	rbat_pull_up_r = <16900>;
+	rbat_pull_up_volt = <1800>;
+
+	batt_temperature_table_num = <17>;
+	batt_temperature_table = <
+			    (-20) 69989
+			    (-15) 54856
+			    (-10) 43322
+			    (-5) 34461
+			    0 27604
+			    5 22263
+			    10 18063
+			    15 14746
+			    20 12109
+			    25 10000 30 8303 35 6930 40 5813 45 4899 50 4155 55 3538 60 3023>;
+
+	battery_profile_t0_num = <54>;
+	battery_profile_t0 = <0 4330
+				2 4276
+				4 4247
+				7 4213
+				8 4205
+				10 4181
+				12 4158
+				14 4135
+				16 4119
+				18 4097
+				20 4077
+				22 4071
+				24 4034
+				26 4008
+				27 3991
+				29 3980
+				31 3970
+				33 3961
+				35 3945
+				37 3928
+				39 3915
+				41 3893
+				42 3886
+				44 3867
+				46 3852
+				48 3840
+				50 3829
+				52 3823
+				54 3816
+				56 3807
+				58 3800
+				60 3795
+				61 3793
+				63 3787
+				65 3784
+				67 3780
+				69 3775
+				71 3771
+				73 3766
+				75 3763
+				76 3757
+				78 3753
+				80 3745
+				82 3739
+				84 3728
+				86 3717
+				88 3708
+				90 3695
+				92 3691
+				94 3688
+				95 3686
+				97 3624
+				99 3492
+				100 3400>;
+
+	battery_profile_t1_num = <54>;
+	battery_profile_t1 = <0 4330
+				2 4276
+				4 4247
+				7 4213
+				8 4205
+				10 4181
+				12 4158
+				14 4135
+				16 4119
+				18 4097
+				20 4077
+				22 4071
+				24 4034
+				26 4008
+				27 3991
+				29 3980
+				31 3970
+				33 3961
+				35 3945
+				37 3928
+				39 3915
+				41 3893
+				42 3886
+				44 3867
+				46 3852
+				48 3840
+				50 3829
+				52 3823
+				54 3816
+				56 3807
+				58 3800
+				60 3795
+				61 3793
+				63 3787
+				65 3784
+				67 3780
+				69 3775
+				71 3771
+				73 3766
+				75 3763
+				76 3757
+				78 3753
+				80 3745
+				82 3739
+				84 3728
+				86 3717
+				88 3708
+				90 3695
+				92 3691
+				94 3688
+				95 3686
+				97 3624
+				99 3492
+				100 3400>;
+
+	battery_profile_t2_num = <54>;
+	battery_profile_t2 = <0 4330
+				2 4276
+				4 4247
+				7 4213
+				8 4205
+				10 4181
+				12 4158
+				14 4135
+				16 4119
+				18 4097
+				20 4077
+				22 4071
+				24 4034
+				26 4008
+				27 3991
+				29 3980
+				31 3970
+				33 3961
+				35 3945
+				37 3928
+				39 3915
+				41 3893
+				42 3886
+				44 3867
+				46 3852
+				48 3840
+				50 3829
+				52 3823
+				54 3816
+				56 3807
+				58 3800
+				60 3795
+				61 3793
+				63 3787
+				65 3784
+				67 3780
+				69 3775
+				71 3771
+				73 3766
+				75 3763
+				76 3757
+				78 3753
+				80 3745
+				82 3739
+				84 3728
+				86 3717
+				88 3708
+				90 3695
+				92 3691
+				94 3688
+				95 3686
+				97 3624
+				99 3492
+				100 3400>;
+
+	battery_profile_t3_num = <54>;
+	battery_profile_t3 = <0 4330
+				2 4276
+				4 4247
+				7 4213
+				8 4205
+				10 4181
+				12 4158
+				14 4135
+				16 4119
+				18 4097
+				20 4077
+				22 4071
+				24 4034
+				26 4008
+				27 3991
+				29 3980
+				31 3970
+				33 3961
+				35 3945
+				37 3928
+				39 3915
+				41 3893
+				42 3886
+				44 3867
+				46 3852
+				48 3840
+				50 3829
+				52 3823
+				54 3816
+				56 3807
+				58 3800
+				60 3795
+				61 3793
+				63 3787
+				65 3784
+				67 3780
+				69 3775
+				71 3771
+				73 3766
+				75 3763
+				76 3757
+				78 3753
+				80 3745
+				82 3739
+				84 3728
+				86 3717
+				88 3708
+				90 3695
+				92 3691
+				94 3688
+				95 3686
+				97 3624
+				99 3492
+				100 3400>;
+
+	r_profile_t0_num = <54>;
+	r_profile_t0 = <165 4330
+				165 4276
+				167 4247
+				165 4213
+				165 4205
+				166 4181
+				168 4158
+				167 4135
+				168 4119
+				172 4097
+				175 4077
+				183 4071
+				180 4034
+				180 4008
+				182 3991
+				185 3980
+				188 3970
+				192 3961
+				190 3945
+				187 3928
+				185 3915
+				172 3893
+				168 3886
+				160 3867
+				163 3852
+				163 3840
+				163 3829
+				165 3823
+				161 3816
+				160 3807
+				160 3800
+				162 3795
+				162 3793
+				163 3787
+				165 3784
+				166 3780
+				167 3775
+				164 3771
+				163 3766
+				165 3763
+				167 3757
+				166 3753
+				168 3745
+				170 3739
+				175 3728
+				178 3717
+				182 3708
+				180 3695
+				180 3691
+				183 3688
+				185 3686
+				185 3624
+				187 3492
+				190 3400>;
+
+	r_profile_t1_num = <54>;
+	r_profile_t1 = <165 4330
+				165 4276
+				167 4247
+				165 4213
+				165 4205
+				166 4181
+				168 4158
+				167 4135
+				168 4119
+				172 4097
+				175 4077
+				183 4071
+				180 4034
+				180 4008
+				182 3991
+				185 3980
+				188 3970
+				192 3961
+				190 3945
+				187 3928
+				185 3915
+				172 3893
+				168 3886
+				160 3867
+				163 3852
+				163 3840
+				163 3829
+				165 3823
+				161 3816
+				160 3807
+				160 3800
+				162 3795
+				162 3793
+				163 3787
+				165 3784
+				166 3780
+				167 3775
+				164 3771
+				163 3766
+				165 3763
+				167 3757
+				166 3753
+				168 3745
+				170 3739
+				175 3728
+				178 3717
+				182 3708
+				180 3695
+				180 3691
+				183 3688
+				185 3686
+				185 3624
+				187 3492
+				190 3400>;
+
+	r_profile_t2_num = <54>;
+	r_profile_t2 = <165 4330
+				165 4276
+				167 4247
+				165 4213
+				165 4205
+				166 4181
+				168 4158
+				167 4135
+				168 4119
+				172 4097
+				175 4077
+				183 4071
+				180 4034
+				180 4008
+				182 3991
+				185 3980
+				188 3970
+				192 3961
+				190 3945
+				187 3928
+				185 3915
+				172 3893
+				168 3886
+				160 3867
+				163 3852
+				163 3840
+				163 3829
+				165 3823
+				161 3816
+				160 3807
+				160 3800
+				162 3795
+				162 3793
+				163 3787
+				165 3784
+				166 3780
+				167 3775
+				164 3771
+				163 3766
+				165 3763
+				167 3757
+				166 3753
+				168 3745
+				170 3739
+				175 3728
+				178 3717
+				182 3708
+				180 3695
+				180 3691
+				183 3688
+				185 3686
+				185 3624
+				187 3492
+				190 3400>;
+
+
+	r_profile_t3_num = <54>;
+	r_profile_t3 = <165 4330
+				165 4276
+				167 4247
+				165 4213
+				165 4205
+				166 4181
+				168 4158
+				167 4135
+				168 4119
+				172 4097
+				175 4077
+				183 4071
+				180 4034
+				180 4008
+				182 3991
+				185 3980
+				188 3970
+				192 3961
+				190 3945
+				187 3928
+				185 3915
+				172 3893
+				168 3886
+				160 3867
+				163 3852
+				163 3840
+				163 3829
+				165 3823
+				161 3816
+				160 3807
+				160 3800
+				162 3795
+				162 3793
+				163 3787
+				165 3784
+				166 3780
+				167 3775
+				164 3771
+				163 3766
+				165 3763
+				167 3757
+				166 3753
+				168 3745
+				170 3739
+				175 3728
+				178 3717
+				182 3708
+				180 3695
+				180 3691
+				183 3688
+				185 3686
+				185 3624
+				187 3492
+				190 3400>;
+
+};

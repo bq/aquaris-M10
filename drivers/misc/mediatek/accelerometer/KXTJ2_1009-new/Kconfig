@@ -1,0 +1,5 @@
+config MTK_KXTJ2_1009_NEW
+        bool "KXTJ2_1009_NEW for MediaTek package"
+        default n
+        help
+           KXTJ2_1009_NEW

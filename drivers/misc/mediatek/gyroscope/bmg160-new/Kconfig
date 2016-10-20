@@ -1,0 +1,10 @@
+
+config MTK_BMG160
+	bool "BMG160 for MediaTek package"
+	default n
+        help
+        It support different gyroscope sensor.
+        If this option is set,
+	  	it will support
+         BMG160 gyroscope.
+
