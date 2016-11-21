@@ -87,6 +87,7 @@ module_param(delay_time1, int, 0644);
 
 void mt_usb_set_vbus(struct musb *musb, int is_on)
 {
+	
 	DBG(0, "mt65xx_usb20_vbus++,is_on=%d\r\n", is_on);
 #ifndef FPGA_PLATFORM
 	if (is_on) {

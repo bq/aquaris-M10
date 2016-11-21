@@ -115,6 +115,10 @@
 #include "mtk_musb.h"
 struct device_node *dts_np;
 #endif
+#include <linux/of_irq.h>
+#include <linux/of_address.h>
+#include <linux/gpio.h>
+#include <linux/of_gpio.h>
 
 int musb_is_shutting = 0;
 int musb_skip_charge_detect = 0;
@@ -1215,11 +1219,6 @@ void musb_start(struct musb *musb)
 
 	DBG(0, "start, is_host=%d is_active=%d\n", musb->is_host, musb->is_active);
 
-    intrusbe = musb_readb(regs, MUSB_ULPI_REG_DATA); //wwj add,20160719
-    intrusbe = intrusbe | 0x80; //wwj add,20160719
-    intrusbe = intrusbe & 0xbf; //wwj add,20160719
-    musb_writeb(regs, MUSB_ULPI_REG_DATA, intrusbe); //wwj add,20160719
-
 	if (musb->is_active) {
 		if (musb->is_host) {
 			/* remove babble: NOISE_STILL_SOF:1, BABBLE_CLR_EN:0 */
@@ -1230,8 +1229,6 @@ void musb_start(struct musb *musb)
 			DBG(0, "set ignore babble MUSB_ULPI_REG_DATA=%x\n",
 			    musb_readb(regs, MUSB_ULPI_REG_DATA));
 
-            musb_generic_disable(musb); //wwj add,20160719
-            
 			DBG(0, "we are host now, add more interrupt devctl=%x\n",
 			    musb_readb(mtk_musb->mregs, MUSB_DEVCTL));
 			musb->intrtxe = 0xffff;
@@ -2573,6 +2570,7 @@ static int musb_suspend_noirq(struct device *dev)
 	usb_enable_clock(false);
 	mtk_usb_power = false;
 
+	usb_pre_clock(false);
 	/*spin_unlock_irqrestore(&musb->lock, flags); */
 	return 0;
 }
@@ -2582,6 +2580,7 @@ static int musb_resume_noirq(struct device *dev)
 {
 	struct musb *musb = dev_to_musb(dev);
 
+       usb_pre_clock(true);
 	/*Turn on USB clock, before writing a batch of regs */
 	mtk_usb_power = true;
 	usb_enable_clock(true);

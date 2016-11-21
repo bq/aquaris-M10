@@ -113,6 +113,10 @@
 #ifdef CONFIG_MUSBFSH_PIO_ONLY
 #undef CONFIG_MUSBFSH_PIO_ONLY
 #endif
+#if 1//def MTK_USB_HOST_REMOVE_WAKEUPLOCK
+#include <linux/notifier.h>
+#include <linux/fb.h>
+#endif
 
 #define DRIVER_AUTHOR "Mentor Graphics, Texas Instruments, Nokia, Mediatek"
 #define DRIVER_DESC "MT65xx USB Host Controller Driver"
@@ -406,6 +410,7 @@ static irqreturn_t musbfsh_stage0_irq(struct musbfsh *musbfsh, u8 int_usb, u8 de
 	/* see manual for the order of the tests */
 	if (int_usb & MUSBFSH_INTR_SESSREQ) {
 		/*will not run to here */
+		# if 0//close here by linrui
 		void __iomem *mbase = musbfsh->mregs;
 
 		WARNING("SESSION_REQUEST\n");
@@ -421,7 +426,7 @@ static irqreturn_t musbfsh_stage0_irq(struct musbfsh *musbfsh, u8 int_usb, u8 de
 		musbfsh_writeb(mbase, MUSBFSH_DEVCTL, devctl);
 		musbfsh->ep0_stage = MUSBFSH_EP0_START;
 		musbfsh_platform_set_vbus(musbfsh, 1);
-
+            #endif
 		handled = IRQ_HANDLED;
 	}
 
@@ -611,13 +616,20 @@ void musbfsh_start(struct musbfsh *musbfsh)
 	u8 devctl = musbfsh_readb(regs, MUSBFSH_DEVCTL);
 	u8 power = musbfsh_readb(regs, MUSBFSH_POWER);
 	int int_level1 = 0;
+	u8  babblecontrol = 0;
 
 	WARNING("<== devctl 0x%02x\n", devctl);
+
+	/* remove babble: NOISE_STILL_SOF:1, BABBLE_CLR_EN:0 */
+	babblecontrol = musbfsh_readb(regs, MUSBFSH_ULPI_REG_DATA);
+	babblecontrol = babblecontrol | 0x80;
+	babblecontrol = babblecontrol & 0xbf;
+	musbfsh_writeb(regs, MUSBFSH_ULPI_REG_DATA, babblecontrol);
 
 	/*  Set INT enable registers, enable interrupts */
 	musbfsh_writew(regs, MUSBFSH_INTRTXE, musbfsh->epmask);
 	musbfsh_writew(regs, MUSBFSH_INTRRXE, musbfsh->epmask & 0xfffe);
-	musbfsh_writeb(regs, MUSBFSH_INTRUSBE, 0xf7);
+	musbfsh_writeb(regs, MUSBFSH_INTRUSBE, 0xf3);
 	/* enable level 1 interrupts */
 	musbfsh_writew(regs, USB11_L1INTM, 0x000f);
 	int_level1 = musbfsh_readw(musbfsh->mregs, USB11_L1INTM);
@@ -1340,6 +1352,50 @@ fail0:
 #ifndef CONFIG_MUSBFSH_PIO_ONLY
 static u64 *orig_dma_mask;
 #endif
+#if 1//def MTK_USB_HOST_REMOVE_WAKEUPLOCK
+
+static int usb11_fb_notifier_callback(struct notifier_block *self, unsigned long event, void *data)
+{
+	struct fb_event *evdata = data;
+	int blank;
+	   
+
+	/* skip if it's not a blank event */
+	if (event != FB_EVENT_BLANK)
+		return 0;
+
+	if (evdata == NULL)
+		return 0;
+	if (evdata->data == NULL)
+		return 0;
+
+	blank = *(int *)evdata->data;
+
+        printk(" blank = %d, event = %lu\n", blank, event);
+	switch (blank) {
+	/* LCM ON */
+	case FB_BLANK_UNBLANK:
+		  printk("<musbfsh>FB_BLANK_UNBLANK\n");
+		  musbfsh_platform_set_vbus(musbfsh_Device,1);
+		break;
+	/* LCM OFF */
+	case FB_BLANK_POWERDOWN:
+		 printk("<musbfsh>FB_BLANK_POWERDOWN\n");
+		  musbfsh_platform_set_vbus(musbfsh_Device,0);
+		break;
+	default:
+		break;
+	}
+
+        printk("exit usb11_fb_notifier_callback\n");
+	return 0;
+	
+}
+
+static struct notifier_block usb11_fb_notifier = {
+	.notifier_call = usb11_fb_notifier_callback,
+};
+#endif
 
 static int __init musbfsh_probe(struct platform_device *pdev)
 {
@@ -1355,6 +1411,13 @@ static int __init musbfsh_probe(struct platform_device *pdev)
 	unsigned long usb_phy11_base;
 
 	INFO("[Flow][USB11]%s:%d,CONFIG_OF\n", __func__, __LINE__);
+
+#ifndef CONFIG_MTK_CLKMGR
+	clk_prepare(usbpll_clk);
+	clk_prepare(usbmcu_clk);
+	clk_prepare(icusb_clk);
+#endif
+
 #if 0
 	pr_info("musb probe\n");
 	if (usb11_dts_np) {
@@ -1402,6 +1465,13 @@ static int __init musbfsh_probe(struct platform_device *pdev)
 	if (status < 0)
 		ERR("musbfsh_init_controller failed with status %d\n", status);
 	INFO("--\n");
+	
+ #if 1//def MTK_USB_HOST_REMOVE_WAKEUPLOCK
+	 if (fb_register_client(&usb11_fb_notifier)) 
+	 {
+	        dev_err(&pdev->dev, "%s: register FB client failed!\n", __func__);
+	  }
+#endif
 #ifdef IC_USB
 	device_create_file(dev, &dev_attr_start);
 	WARNING("IC-USB is enabled\n");
@@ -1436,6 +1506,13 @@ static int __exit musbfsh_remove(struct platform_device *pdev)
 #ifndef CONFIG_MUSBFSH_PIO_ONLY
 	dma_set_mask(dev, *dev->parent->dma_mask);
 #endif
+
+#ifndef CONFIG_MTK_CLKMGR
+	clk_unprepare(icusb_clk);
+	clk_unprepare(usbmcu_clk);
+	clk_unprepare(usbpll_clk);
+#endif
+
 	return 0;
 }
 
@@ -1473,7 +1550,7 @@ static void musbfsh_save_context(struct musbfsh *musbfsh)
 		musbfsh->context.index_regs[i].rxmaxp = musbfsh_readw(epio, MUSBFSH_RXMAXP);
 		musbfsh->context.index_regs[i].rxcsr = musbfsh_readw(epio, MUSBFSH_RXCSR);
 
-		if (musbfsh->dyn_fifo) {
+	//	if (musbfsh->dyn_fifo) {
 			musbfsh->context.index_regs[i].txfifoadd =
 			    musbfsh_read_txfifoadd(musbfsh_base);
 			musbfsh->context.index_regs[i].rxfifoadd =
@@ -1482,7 +1559,7 @@ static void musbfsh_save_context(struct musbfsh *musbfsh)
 			    musbfsh_read_txfifosz(musbfsh_base);
 			musbfsh->context.index_regs[i].rxfifosz =
 			    musbfsh_read_rxfifosz(musbfsh_base);
-		}
+	//	}
 	}
 }
 
@@ -1495,6 +1572,7 @@ static void musbfsh_restore_context(struct musbfsh *musbfsh)
 	musbfsh_writeb(musbfsh_base, MUSBFSH_POWER, musbfsh->context.power);
 	musbfsh_writew(musbfsh_base, MUSBFSH_INTRTXE, musbfsh->context.intrtxe);
 	musbfsh_writew(musbfsh_base, MUSBFSH_INTRRXE, musbfsh->context.intrrxe);
+	musbfsh->context.intrusbe &= ~MUSBFSH_INTR_BABBLE;
 	musbfsh_writeb(musbfsh_base, MUSBFSH_INTRUSBE, musbfsh->context.intrusbe);
 	musbfsh_writeb(musbfsh_base, MUSBFSH_DEVCTL, musbfsh->context.devctl);
 
@@ -1515,7 +1593,7 @@ static void musbfsh_restore_context(struct musbfsh *musbfsh)
 		musbfsh_writew(epio, MUSBFSH_RXMAXP, musbfsh->context.index_regs[i].rxmaxp);
 		musbfsh_writew(epio, MUSBFSH_RXCSR, musbfsh->context.index_regs[i].rxcsr);
 
-		if (musbfsh->dyn_fifo) {
+	//	if (musbfsh->dyn_fifo) {
 			musbfsh_write_txfifosz(musbfsh_base,
 					       musbfsh->context.index_regs[i].txfifosz);
 			musbfsh_write_rxfifosz(musbfsh_base,
@@ -1524,7 +1602,7 @@ static void musbfsh_restore_context(struct musbfsh *musbfsh)
 						musbfsh->context.index_regs[i].txfifoadd);
 			musbfsh_write_rxfifoadd(musbfsh_base,
 						musbfsh->context.index_regs[i].rxfifoadd);
-		}
+	//	}
 	}
 
 	musbfsh_writeb(musbfsh_base, MUSBFSH_INDEX, musbfsh->context.index);
@@ -1546,9 +1624,17 @@ static int musbfsh_suspend(struct device *dev)
 
 	WARNING("++\n");
 	spin_lock_irqsave(&musbfsh->lock, flags);
+	disable_irq(musbfsh->nIrq); // wx, clearn IRQ before closing clock. Prevent SMP issue: clock is disabled on CPU1, but ISR is running on CPU0 and failed to clear interrupt
 	musbfsh_save_context(musbfsh);
-	musbfsh_platform_set_power(musbfsh, 0);
+	musbfsh_read_clear_generic_interrupt(musbfsh);	
+	 musbfsh_platform_set_power(musbfsh, 0);
 	spin_unlock_irqrestore(&musbfsh->lock, flags);
+#ifndef CONFIG_MTK_CLKMGR
+	clk_unprepare(icusb_clk);
+	clk_unprepare(usbmcu_clk);
+	clk_unprepare(usbpll_clk);
+#endif
+
 	return 0;
 }
 
@@ -1558,10 +1644,17 @@ static int musbfsh_resume(struct device *dev)
 	unsigned long flags;
 	struct musbfsh *musbfsh = dev_to_musbfsh(&pdev->dev);
 
+#ifndef CONFIG_MTK_CLKMGR
+	clk_prepare(usbpll_clk);
+	clk_prepare(usbmcu_clk);
+	clk_prepare(icusb_clk);
+#endif
+
 	WARNING("++\n");
 	spin_lock_irqsave(&musbfsh->lock, flags);
 	musbfsh_platform_set_power(musbfsh, 1);
 	musbfsh_restore_context(musbfsh);
+	enable_irq(musbfsh->nIrq);
 	spin_unlock_irqrestore(&musbfsh->lock, flags);
 	return 0;
 }

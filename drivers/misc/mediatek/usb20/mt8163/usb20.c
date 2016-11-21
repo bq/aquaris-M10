@@ -1335,14 +1335,6 @@ static int mt_usb_dts_probe(struct platform_device *pdev)
 		DBG(0, KERN_WARNING "cannot get icusb clock\n");
 		return PTR_ERR(icusb_clk);
 	}
-	DBG(0, KERN_WARNING "get icusb clock ok, prepare it\n");
-	retval = clk_prepare(icusb_clk);
-	if (retval == 0) {
-		DBG(0, KERN_WARNING "prepare done\n");
-	} else {
-		DBG(0, KERN_WARNING "prepare fail\n");
-		return retval;
-	}
 #endif
 
 	mt_usb_device.dev.of_node = pdev->dev.of_node;

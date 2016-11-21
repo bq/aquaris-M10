@@ -410,7 +410,6 @@
 	max-frequency = <200000000>;
 	cap-sd-highspeed;
 	sd-uhs-sdr50;
-	sd-uhs-sdr104;
 	cd-gpios = <&pio 28 0>;
 	vmmc-supply = <&mt6323_vmch_reg>;
 	vqmmc-supply = <&mt6323_vmc_reg>;

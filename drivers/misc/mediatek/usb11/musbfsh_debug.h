@@ -59,5 +59,7 @@ extern int musbfsh_debug;
 
 #define WARNING(fmt, args...) zprintk(KERN_WARNING, fmt, ## args)
 #define ERR(fmt, args...) zprintk(KERN_ERR, fmt, ## args)
+extern int musbfsh_init_debugfs(struct musbfsh *musb);
+extern void musbfsh_exit_debugfs(struct musbfsh *musb);
 
 #endif

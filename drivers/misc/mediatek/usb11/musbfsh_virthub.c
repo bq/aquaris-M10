@@ -109,6 +109,7 @@ static void musbfsh_port_suspend(struct musbfsh *musbfsh, bool do_suspend)
 		/* clean MUSBFSH_INTR_SOF in MUSBFSH_INTRUSBE */
 		intrusbe = musbfsh_readb(mbase, MUSBFSH_INTRUSBE);
 		intrusbe &= ~MUSBFSH_INTR_SOF;
+		intrusbe &= ~MUSBFSH_INTR_BABBLE;
 		musbfsh_writeb(mbase, MUSBFSH_INTRUSBE, intrusbe);
 		mb(); /* flush POWER and PHY setting immediately */
 		/* clean MUSBFSH_INTR_SOF in MUSBFSH_INTRUSB */

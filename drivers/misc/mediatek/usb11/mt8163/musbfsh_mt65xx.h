@@ -20,6 +20,8 @@ extern void usb11_exit(void);
 extern void enable_mcu_clock(bool enable);
 extern void enable_phy_clock(bool enable);
 #ifndef CONFIG_MTK_CLKMGR
+extern struct clk *usbpll_clk;
+extern struct clk *usbmcu_clk;
 extern struct clk *icusb_clk;
 #endif
 #ifdef CONFIG_OF

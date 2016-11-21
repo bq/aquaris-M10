@@ -17,6 +17,11 @@
 #define PARA (28)
 
 #ifdef FPGA_PLATFORM
+bool usb_pre_clock(bool enable)
+{
+	return true;
+}
+
 bool usb_enable_clock(bool enable)
 {
 	return true;
@@ -169,6 +174,24 @@ void enable_mcu_clock(bool enable)
 	spin_unlock_irqrestore(&musb_mcu_clock_lock, flags);
 }
 
+bool usb_pre_clock(bool enable)
+{
+	if (enable) {
+#ifndef CONFIG_MTK_CLKMGR
+		clk_prepare(usbpll_clk);
+		clk_prepare(usbmcu_clk);
+		clk_prepare(usb_clk);
+#endif
+	} else {
+#ifndef CONFIG_MTK_CLKMGR
+		clk_unprepare(usb_clk);
+		clk_unprepare(usbmcu_clk);
+		clk_unprepare(usbpll_clk);
+#endif
+	}
+	return true;
+}
+
 bool usb_enable_clock(bool enable)
 {
 	static int count;
@@ -184,8 +207,8 @@ bool usb_enable_clock(bool enable)
 		enable_clock(MT_CG_INFRA_ICUSB, "INFRA_ICUSB");
 #else
 		DBG(0, "enable usb0 clock\n");
-		clk_enable(usb_clk);
 		enable_mcu_clock(true);
+		clk_enable(usb_clk);
 #endif
 	} else if (!enable && count == 1) {
 #ifdef CONFIG_MTK_CLKMGR

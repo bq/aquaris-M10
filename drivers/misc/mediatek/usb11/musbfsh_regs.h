@@ -85,6 +85,7 @@
 #define MUSBFSH_ULPI_REG_REQ	(1 << 0)
 #define MUSBFSH_ULPI_REG_CMPLT	(1 << 1)
 #define MUSBFSH_ULPI_RDN_WR	(1 << 2)
+#define MUSBFSH_ULPI_REG_DATA	0x74	/* 8 bit */
 
 /* TESTMODE */
 #define MUSBFSH_TEST_FORCE_HOST	0x80
