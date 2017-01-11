@@ -291,6 +291,17 @@ void wk_proc_exit(void)
 
 }
 
+/**
+#if 0 // Print HW gating value by DRAM owner
+#ifdef CONFIG_OF
+#include <linux/of.h>
+#include <linux/of_address.h>
+#endif
+
+void __iomem *dram_nao_base = NULL;
+#endif
+*/
+
 static int kwdt_thread(void *arg)
 {
 
@@ -308,6 +319,31 @@ static int kwdt_thread(void *arg)
 	set_current_state(TASK_INTERRUPTIBLE);
 
 	for (;;) {
+
+		/**
+		#if 0 // Print HW gating value by DRAM owner
+		if (NULL != dram_nao_base) {
+			printk(KERN_ERR "%s, HW Gating, 0x374:0x%x, 0x378:%x\n", __FUNCTION__,
+				DRV_Reg32(dram_nao_base + 0x374),
+				DRV_Reg32(dram_nao_base + 0x378));
+		}
+		else {
+			struct device_node *node = NULL;
+			node = of_find_compatible_node(NULL, NULL, "mediatek,DRAMC_NAO");
+			if (node) {
+				dram_nao_base = of_iomap(node, 0);
+
+				printk(KERN_ERR "%s, HW Gating, Base::%p, 0x374:0x%x, 0x378:%x\n", __FUNCTION__,
+					dram_nao_base,
+					DRV_Reg32(dram_nao_base + 0x374),
+					DRV_Reg32(dram_nao_base + 0x378));
+			} else {
+				printk(KERN_ERR "can't find DRAMC0_NA compatible node\n");
+				return -1;
+			}
+		}
+		#endif
+		*/
 
 		if (kthread_should_stop())
 			break;

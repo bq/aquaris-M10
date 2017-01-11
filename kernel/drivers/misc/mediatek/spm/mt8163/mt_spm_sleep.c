@@ -251,7 +251,7 @@ static struct pcm_desc suspend_pcm = {
 #define WAKE_SRC_FOR_SUSPEND                                                          \
     (WAKE_SRC_MD32_WDT | WAKE_SRC_KP | WAKE_SRC_CONN2AP | WAKE_SRC_EINT | WAKE_SRC_CONN_WDT |                \
      WAKE_SRC_MD32_SPM | WAKE_SRC_USB_CD | WAKE_SRC_USB_PDN |            \
-     WAKE_SRC_SEJ | WAKE_SRC_ALL_MD32)
+     WAKE_SRC_ALL_MD32)
 
 #define WAKE_SRC_FOR_MD32  0                                          \
     //(WAKE_SRC_AUD_MD32)

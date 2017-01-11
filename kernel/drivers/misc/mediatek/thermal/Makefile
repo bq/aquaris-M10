@@ -7,7 +7,7 @@ ifeq ($(CONFIG_MTK_LEDS), y)
 endif
 obj-$(CONFIG_THERMAL) += mtk_cooler_kshutdown.o
 obj-$(CONFIG_THERMAL) += mtk_cooler_cam.o
-obj-$(CONFIG_THERMAL) += mtk_cooler_vrt.o
+#obj-$(CONFIG_THERMAL) += mtk_cooler_vrt.o
 
 obj-y += $(subst ",,$(CONFIG_MTK_PLATFORM))/
 

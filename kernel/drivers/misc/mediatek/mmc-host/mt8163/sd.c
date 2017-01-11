@@ -41,6 +41,7 @@
 #include "dbg.h"
 #include "msdc_debug.h"
 
+#define MSDC_USE_PATCH_BIT2_TURNING_WITH_ASYNC
 //#ifndef FPGA_PLATFORM
 //#include <mach/mt_pm_wrap.h>
 //#endif
@@ -9493,6 +9494,7 @@ static void msdc_ops_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 #endif
 
         sdr_write32(MSDC_PAD_TUNE,   0x00000000);
+	sdr_set_field(MSDC_PAD_TUNE, MSDC_PAD_TUNE_RXDLYSEL, 1);
         sdr_set_field(MSDC_PAD_TUNE, MSDC_PAD_TUNE_DATWRDLY, host->hw->datwrddly);
         sdr_set_field(MSDC_PAD_TUNE, MSDC_PAD_TUNE_CMDRRDLY, host->hw->cmdrrddly);
         sdr_set_field(MSDC_PAD_TUNE, MSDC_PAD_TUNE_CMDRDLY, host->hw->cmdrddly);
@@ -9623,6 +9625,7 @@ static void msdc_ops_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
             sdr_write32(MSDC_DAT_RDDLY0, 0x00000000);
             sdr_write32(MSDC_DAT_RDDLY1, 0x00000000);
             sdr_write32(MSDC_PAD_TUNE,   0x00000000);
+	    sdr_set_field(MSDC_PAD_TUNE, MSDC_PAD_TUNE_RXDLYSEL, 1);
             sdr_set_field(MSDC_PATCH_BIT1, MSDC_PB1_CMD_RSP_TA_CNTR,1);
             sdr_set_field(MSDC_PATCH_BIT1, MSDC_PB1_WRDAT_CRCS_TA_CNTR,1);
             if ((host->hw->host_function == MSDC_EMMC) || (host->hw->host_function == MSDC_SD)){
@@ -10549,6 +10552,7 @@ static void msdc_init_hw(struct msdc_host *host)
 #if 1
     /* reset tuning parameter */
     sdr_write32(MSDC_PAD_TUNE,   0x00000000);
+    sdr_set_field(MSDC_PAD_TUNE, MSDC_PAD_TUNE_RXDLYSEL, 1);
 
     sdr_write32(MSDC_IOCON,    0x00000000);
 
@@ -10575,7 +10579,7 @@ static void msdc_init_hw(struct msdc_host *host)
     }
 #endif	
     //data delay settings should be set after enter high speed mode(now is at ios function >25MHz), detail information, please refer to P4 description
-    host->saved_para.pad_tune = (((hw->cmdrrddly & 0x1F) << 22) | ((hw->cmdrddly & 0x1F) << 16) | ((hw->datwrddly & 0x1F) << 0));//sdr_read32(MSDC_PAD_TUNE);
+     host->saved_para.pad_tune = (((hw->cmdrrddly & 0x1F) << 22) | ((hw->cmdrddly & 0x1F) << 16) | ((hw->datwrddly & 0x1F) << 0) | BIT(15));//sdr_read32(MSDC_PAD_TUNE);
     host->saved_para.ddly0 = cur_rxdly0; //sdr_read32(MSDC_DAT_RDDLY0);
     host->saved_para.ddly1 = cur_rxdly1; //sdr_read32(MSDC_DAT_RDDLY1);
     sdr_get_field(MSDC_PATCH_BIT1, MSDC_PB1_CMD_RSP_TA_CNTR,    host->saved_para.cmd_resp_ta_cntr);
