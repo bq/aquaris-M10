@@ -892,6 +892,7 @@ void HdcpService(enum HDCP_CTRL_STATE_T e_hdcp_state)
 		if ((bTemp & RX_BIT_ADDR_READY)) {
 			_bReCheckReadyBit = 0;
 			vSetHDCPState(HDCP_READ_KSV_LIST);
+			vSendHdmiCmd(HDMI_HDCP_PROTOCAL_CMD);
 		} else if (_bReCheckReadyBit > HDCP_CHECK_KSV_LIST_RDY_RETRY_COUNT) {
 			vSetHDCPState(HDCP_RE_DO_AUTHENTICATION);
 			vSendHdmiCmd(HDMI_HDCP_PROTOCAL_CMD);

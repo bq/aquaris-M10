@@ -766,7 +766,7 @@ void vSetHDMITxPLL(unsigned char bResIndex, unsigned char bdeepmode)
 		vWriteIoPllMsk(HDMI_CON0, (0x0 << RG_HDMITX_EN_IMP), RG_HDMITX_EN_IMP_MASK);
 		vWriteIoPllMsk(HDMI_CON1, (v4value1 << RG_HDMITX_DRV_IMP), RG_HDMITX_DRV_IMP_MASK);
 		vWriteIoPllMsk(HDMI_CON4, v4value2, RG_HDMITX_RESERVE_MASK);
-		vWriteIoPllMsk(HDMI_CON0, (0xa << RG_HDMITX_DRV_IBIAS), RG_HDMITX_DRV_IBIAS_MASK);
+		vWriteIoPllMsk(HDMI_CON0, (0x9 << RG_HDMITX_DRV_IBIAS), RG_HDMITX_DRV_IBIAS_MASK);//0xa. xmyyq-2016.11.07-modify hdmi tx driver
 	}
 
 	/* power on sequence of hdmi */
