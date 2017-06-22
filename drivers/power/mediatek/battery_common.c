@@ -88,17 +88,16 @@
 #include <linux/time.h>
 #endif
 
+/* add wwj */
 #ifdef CONFIG_MTK_BQ27520_SUPPORT
 #include <mach/bq27520.h>
 #endif
-
+/* end wwj */
 
 /* ////////////////////////////////////////////////////////////////////////////// */
 /* Battery Logging Entry */
 /* ////////////////////////////////////////////////////////////////////////////// */
 int Enable_BATDRV_LOG = BAT_LOG_CRTI;
-/* static struct proc_dir_entry *proc_entry; */
-char proc_bat_data[32];
 
 /* ///////////////////////////////////////////////////////////////////////////////////////// */
 /* // Smart Battery Structure */
@@ -134,9 +133,11 @@ int battery_cmd_thermal_test_mode_value = 0;
 int g_battery_tt_check_flag = 0;
 /* 0:default enable check batteryTT, 1:default disable check batteryTT */
 
+/* add wwj */
 #if defined(CONFIG_MALATA_HARDWARE_VERSION)
 extern int hardware_version;
 #endif
+/* end wwj */
 
 /*
  *  Global Variable
@@ -511,15 +512,17 @@ EXPORT_SYMBOL(wake_up_bat2);
 
 static ssize_t bat_log_write(struct file *filp, const char __user *buff, size_t len, loff_t *data)
 {
-	if (copy_from_user(&proc_bat_data, buff, len)) {
+	char proc_bat_data;
+
+	if ((len <= 0) || copy_from_user(&proc_bat_data, buff, 1)) {
 		battery_log(BAT_LOG_FULL, "bat_log_write error.\n");
 		return -EFAULT;
 	}
 
-	if (proc_bat_data[0] == '1') {
+	if (proc_bat_data == '1') {
 		battery_log(BAT_LOG_CRTI, "enable battery driver log system\n");
 		Enable_BATDRV_LOG = 1;
-	} else if (proc_bat_data[0] == '2') {
+	} else if (proc_bat_data == '2') {
 		battery_log(BAT_LOG_CRTI, "enable battery driver log system:2\n");
 		Enable_BATDRV_LOG = 2;
 	} else {
@@ -1755,8 +1758,6 @@ static kal_bool mt_battery_100Percent_tracking_check(void)
 				BMT_status.UI_SOC++;
 			} else {
 				timer_counter++;
-
-				return resetBatteryMeter;
 			}
 
 			resetBatteryMeter = KAL_TRUE;
@@ -1860,10 +1861,12 @@ static kal_bool mt_battery_0Percent_tracking_check(void)
 static void mt_battery_Sync_UI_Percentage_to_Real(void)
 {
 	static unsigned int timer_counter;
+/* add wwj */
 #ifdef SOC_BY_EXT_HW_FG
 	static unsigned int charging_timer;
 	static int real_soc_flag = 0;
 #endif
+/* end wwj */
 
 	if ((BMT_status.UI_SOC > BMT_status.SOC) && ((BMT_status.UI_SOC != 1))) {
 #if !defined(SYNC_UI_SOC_IMM)
@@ -1891,6 +1894,7 @@ static void mt_battery_Sync_UI_Percentage_to_Real(void)
 #endif
 		battery_log(BAT_LOG_CRTI, "[Sync_Real] UI_SOC=%d, SOC=%d, counter = %d\n",
 			    BMT_status.UI_SOC, BMT_status.SOC, timer_counter);	
+/* add wwj */
      }
 #ifdef SOC_BY_EXT_HW_FG
 #if defined(CONFIG_MALATA_HARDWARE_VERSION)
@@ -1919,6 +1923,7 @@ static void mt_battery_Sync_UI_Percentage_to_Real(void)
 		real_soc_flag = 1;
 #endif
 #endif
+/* end wwj */
 
 #if !defined(CUST_CAPACITY_OCV2CV_TRANSFORM)
 		BMT_status.UI_SOC = BMT_status.SOC;
@@ -2249,8 +2254,6 @@ PMU_STATUS do_batt_temp_state_machine(void)
 	if (BMT_status.temperature == batt_cust_data.err_charge_temperature)
 		return PMU_STATUS_FAIL;
 
-
-
 	if (batt_cust_data.bat_low_temp_protect_enable) {
 		if (BMT_status.temperature < batt_cust_data.min_charge_temperature) {
 			battery_log(BAT_LOG_CRTI,
@@ -2543,13 +2546,13 @@ static PMU_STATUS mt_battery_CheckBatteryTemp(void)
 	} else {
 #ifdef BAT_LOW_TEMP_PROTECT_ENABLE
 		if ((BMT_status.temperature < batt_cust_data.min_charge_temperature)
-		    || (BMT_status.temperature == ERR_CHARGE_TEMPERATURE)) {
+		    || (BMT_status.temperature == ERR_CHARGE_TEMPERATURE)) {//modify yyq
 			battery_log(BAT_LOG_CRTI,
 				    "[BATTERY] Battery Under Temperature or NTC fail !!\n\r");
 			status = PMU_STATUS_FAIL;
 		}
 #endif
-		if (BMT_status.temperature >= batt_cust_data.max_charge_temperature) {
+		if (BMT_status.temperature >= batt_cust_data.max_charge_temperature) {//add yyq
 			battery_log(BAT_LOG_CRTI, "[BATTERY] Battery Over Temperature !!\n\r");
 			status = PMU_STATUS_FAIL;
 		}
@@ -2727,7 +2730,6 @@ static void mt_battery_notify_ICharging_check(void)
 #endif
 }
 
-
 static void mt_battery_notify_VBatTemp_check(void)
 {
 #if defined(BATTERY_NOTIFY_CASE_0002_VBATTEMP)
@@ -2765,7 +2767,7 @@ static void mt_battery_notify_VBatTemp_check(void)
 	}
 #else
 #ifdef BAT_LOW_TEMP_PROTECT_ENABLE
-	else if (BMT_status.temperature < batt_cust_data.min_charge_temperature) {
+	else if (BMT_status.temperature < batt_cust_data.min_charge_temperature) {//add yyq
 		g_BatteryNotifyCode |= 0x0020;
 		battery_log(BAT_LOG_CRTI, "[BATTERY] bat_temp(%d) out of range(too low)\n",
 			    BMT_status.temperature);
@@ -2785,7 +2787,6 @@ static void mt_battery_notify_VBatTemp_check(void)
 #endif
 //end-xmyyq-20160503-add bq customer battery notify
 }
-
 
 static void mt_battery_notify_VCharger_check(void)
 {
@@ -3329,7 +3330,8 @@ int bat_thread_kthread(void *x)
 		mutex_lock(&bat_mutex);
 
 		if (((chargin_hw_init_done == KAL_TRUE) && (battery_suspended == KAL_FALSE))
-		    || ((chargin_hw_init_done == KAL_TRUE) && (fg_wake_up_bat == KAL_TRUE)))
+		    || ((chargin_hw_init_done == KAL_TRUE) && (fg_wake_up_bat == KAL_TRUE))
+		    || ((chargin_hw_init_done == KAL_TRUE) && (chr_wake_up_bat == KAL_TRUE)))
 			BAT_thread();
 
 		mutex_unlock(&bat_mutex);
@@ -4632,7 +4634,8 @@ static void battery_timer_pause(void)
 	battery_suspended = KAL_TRUE;
 	mutex_unlock(&bat_mutex);
 
-	battery_log(BAT_LOG_CRTI, "@bs=1@\n");
+	/*remove this for log too much*/
+	/*battery_log(BAT_LOG_CRTI, "@bs=1@\n");*/
 #endif
 
 	get_monotonic_boottime(&g_bat_time_before_sleep);
@@ -4665,6 +4668,7 @@ static void battery_timer_resume(void)
 		battery_log(BAT_LOG_CRTI, "battery resume NOT by pcm timer!!\n");
 	}
 
+    /* add wwj */
     #if defined(SOC_BY_EXT_HW_FG) && defined(CONFIG_MALATA_HARDWARE_VERSION)
 	    if(MATCH_BQ27520_HARDWARE_VERSION == hardware_version){
            BMT_status.UI_SOC = battery_meter_get_battery_percentage();
@@ -4686,6 +4690,7 @@ static void battery_timer_resume(void)
 		   battery_log(BAT_LOG_CRTI, "Sync UI SOC to SOC immediately\n");
 	    }
 	#endif
+    /* end wwj */
 
 	mutex_lock(&bat_mutex);
 
@@ -4694,7 +4699,8 @@ static void battery_timer_resume(void)
 	hrtimer_start(&charger_hv_detect_timer, hvtime, HRTIMER_MODE_REL);
 
 	battery_suspended = KAL_FALSE;
-	battery_log(BAT_LOG_CRTI, "@bs=0@\n");
+	/*remove this for log too much*/
+	/*battery_log(BAT_LOG_CRTI, "@bs=0@\n");*/
 	mutex_unlock(&bat_mutex);
 
 #endif

@@ -69,9 +69,6 @@ int Enable_FGADC_LOG = BMLOG_INFO_LEVEL;
 /* ============================================================ // */
 BATTERY_METER_CONTROL battery_meter_ctrl = NULL;
 
-/* static struct proc_dir_entry *proc_entry_fgadc; */
-static char proc_fgadc_data[32];
-
 kal_bool gFG_Is_Charging = KAL_FALSE;
 kal_bool gFG_Is_Charging_init = KAL_FALSE;
 
@@ -2239,33 +2236,35 @@ signed int battery_meter_get_VSense(void)
 static ssize_t fgadc_log_write(struct file *filp, const char __user *buff,
 			       size_t len, loff_t *data)
 {
-	if (copy_from_user(&proc_fgadc_data, buff, len)) {
+	char proc_fgadc_data;
+
+	if ((len <= 0) || copy_from_user(&proc_fgadc_data, buff, 1)) {
 		bm_debug("fgadc_log_write error.\n");
 		return -EFAULT;
 	}
 
-	if (proc_fgadc_data[0] == '1') {
+	if (proc_fgadc_data == '1') {
 		bm_debug("enable FGADC driver log system\n");
 		Enable_FGADC_LOG = 1;
-	} else if (proc_fgadc_data[0] == '2') {
+	} else if (proc_fgadc_data == '2') {
 		bm_debug("enable FGADC driver log system:2\n");
 		Enable_FGADC_LOG = 2;
-	} else if (proc_fgadc_data[0] == '3') {
+	} else if (proc_fgadc_data == '3') {
 		bm_debug("enable FGADC driver log system:3\n");
 		Enable_FGADC_LOG = 3;
-	} else if (proc_fgadc_data[0] == '4') {
+	} else if (proc_fgadc_data == '4') {
 		bm_debug("enable FGADC driver log system:4\n");
 		Enable_FGADC_LOG = 4;
-	} else if (proc_fgadc_data[0] == '5') {
+	} else if (proc_fgadc_data == '5') {
 		bm_debug("enable FGADC driver log system:5\n");
 		Enable_FGADC_LOG = 5;
-	} else if (proc_fgadc_data[0] == '6') {
+	} else if (proc_fgadc_data == '6') {
 		bm_debug("enable FGADC driver log system:6\n");
 		Enable_FGADC_LOG = 6;
-	} else if (proc_fgadc_data[0] == '7') {
+	} else if (proc_fgadc_data == '7') {
 		bm_debug("enable FGADC driver log system:7\n");
 		Enable_FGADC_LOG = 7;
-	} else if (proc_fgadc_data[0] == '8') {
+	} else if (proc_fgadc_data == '8') {
 		bm_debug("enable FGADC driver log system:8\n");
 		Enable_FGADC_LOG = 8;
 	} else {
