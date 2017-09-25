@@ -99,6 +99,7 @@ static PM_TOOL_T pm_params = {
 	.pLcm_params = NULL,
 	.pLcm_drv = NULL,
 };
+struct mutex fb_config_lock;
 
 static void *pm_get_handle(void)
 {
@@ -208,6 +209,7 @@ static int fbconfig_open(struct inode *inode, struct file *file)
 	PM_TOOL_T *pm_params;
 
 	file->private_data = inode->i_private;
+	mutex_init(&fb_config_lock);
 	pm_params = (PM_TOOL_T *) pm_get_handle();
 	PanelMaster_set_PM_enable(1);
 	pm_params->pLcm_drv = DISP_GetLcmDrv();
@@ -294,15 +296,19 @@ static long fbconfig_ioctl(struct file *file, unsigned int cmd, unsigned long ar
 				pr_debug("list_add: copy_from_user failed! line:%d\n", __LINE__);
 				return -EFAULT;
 			}
+			mutex_lock(&fb_config_lock);
 			list_add(&record_tmp_list->list, &head_list.list);
+			mutex_unlock(&fb_config_lock);
 			return 0;
 		}
 	case DRIVER_IC_CONFIG_DONE:
 		{
 			/* print_from_head_to_tail(); */
+			mutex_lock(&fb_config_lock);
 			Panel_Master_dsi_config_entry("PM_DDIC_CONFIG", NULL);
 			/*free the memory ..... */
 			free_list_memory();
+			mutex_unlock(&fb_config_lock);
 			return 0;
 		}
 	case MIPI_SET_CC:
