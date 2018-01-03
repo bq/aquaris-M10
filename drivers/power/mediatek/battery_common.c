@@ -153,6 +153,8 @@ unsigned int g_call_state = CALL_IDLE;
 kal_bool g_charging_full_reset_bat_meter = KAL_FALSE;
 int g_platform_boot_mode = 0;
 struct timespec g_bat_time_before_sleep;
+struct timespec bat_time_last_update;
+bool UI_SOC_updated = false;
 int g_smartbook_update = 0;
 
 #if defined(CONFIG_MTK_DUAL_INPUT_CHARGER_SUPPORT)
@@ -1805,6 +1807,7 @@ static kal_bool mt_battery_nPercent_tracking_check(void)
 		if (timer_counter == (batt_cust_data.npercent_tracking_time / BAT_TASK_PERIOD)) {
 			/* every x sec decrease UI percentage */
 			BMT_status.UI_SOC--;
+			get_monotonic_boottime(&bat_time_last_update);
 			timer_counter = 1;
 		} else {
 			timer_counter++;
@@ -1845,10 +1848,13 @@ static kal_bool mt_battery_0Percent_tracking_check(void)
 		/*start-160325-xmyyq-add system_off_voltage in battery_custom_data*/
 		if(batt_cust_data.system_off_voltage == 0)
 			batt_cust_data.system_off_voltage = SYSTEM_OFF_VOLTAGE;
-		if (BMT_status.bat_vol > batt_cust_data.system_off_voltage && BMT_status.UI_SOC > 1)
+		if (BMT_status.bat_vol > batt_cust_data.system_off_voltage && BMT_status.UI_SOC > 1) {
 			BMT_status.UI_SOC--;
-		else if (BMT_status.bat_vol <= batt_cust_data.system_off_voltage)
+			get_monotonic_boottime(&bat_time_last_update);
+		} else if (BMT_status.bat_vol <= batt_cust_data.system_off_voltage) {
 			BMT_status.UI_SOC--;
+			get_monotonic_boottime(&bat_time_last_update);
+		}
 	}
 
 	battery_log(BAT_LOG_CRTI, "0Percent, VBAT < %d UI_SOC=%d\r\n", batt_cust_data.system_off_voltage,
@@ -1875,6 +1881,7 @@ static void mt_battery_Sync_UI_Percentage_to_Real(void)
 			if (timer_counter ==
 			    (batt_cust_data.sync_to_real_tracking_time / BAT_TASK_PERIOD)) {
 				BMT_status.UI_SOC--;
+				get_monotonic_boottime(&bat_time_last_update);
 				timer_counter = 0;
 			}
 #ifdef FG_BAT_INT
@@ -1926,7 +1933,22 @@ static void mt_battery_Sync_UI_Percentage_to_Real(void)
 /* end wwj */
 
 #if !defined(CUST_CAPACITY_OCV2CV_TRANSFORM)
-		BMT_status.UI_SOC = BMT_status.SOC;
+
+		if (MATCH_BQ27520_HARDWARE_VERSION != hardware_version) {
+			if (!UI_SOC_updated && BMT_status.UI_SOC != BMT_status.SOC) {
+				get_monotonic_boottime(&bat_time_last_update);
+				BMT_status.UI_SOC = BMT_status.SOC;
+			}
+			if ((BMT_status.charger_exist &&
+				BMT_status.bat_charging_state != CHR_ERROR) &&
+				BMT_status.SOC > BMT_status.UI_SOC) {
+				get_monotonic_boottime(&bat_time_last_update);
+				BMT_status.UI_SOC++;
+			}
+		} else {
+			get_monotonic_boottime(&bat_time_last_update);
+			BMT_status.UI_SOC = BMT_status.SOC;
+		}
 #else
 		if (BMT_status.UI_SOC == -1)
 			BMT_status.UI_SOC = BMT_status.SOC;
@@ -4574,6 +4596,7 @@ static int battery_probe(struct platform_device *dev)
 	BMT_status.UI_SOC = -1;
 #else
 	BMT_status.UI_SOC = 0;
+	get_monotonic_boottime(&bat_time_last_update);
 #endif
 
 	BMT_status.bat_charging_state = CHR_PRE;
@@ -4647,7 +4670,10 @@ static void battery_timer_resume(void)
 #else
 	kal_bool is_pcm_timer_trigger = KAL_FALSE;
 	struct timespec bat_time_after_sleep;
+	struct timespec bat_time_now;
 	ktime_t ktime, hvtime;
+	kal_bool ext_gauge_IC_update_SOC = KAL_FALSE;
+	long time_after_last_update = 0;
 
 #ifdef CONFIG_MTK_POWER_EXT_DETECT
 	if (KAL_TRUE == bat_is_ext_power())
@@ -4658,6 +4684,21 @@ static void battery_timer_resume(void)
 	hvtime = ktime_set(0, BAT_MS_TO_NS(2000));
 
 	get_monotonic_boottime(&bat_time_after_sleep);
+	get_monotonic_boottime(&bat_time_now);
+
+	time_after_last_update = bat_time_now.tv_sec - bat_time_last_update.tv_sec;
+	/* Decrease UI SOC at least 1% each 5h (14mA) */
+	if (time_after_last_update > 18000 && MATCH_BQ27520_HARDWARE_VERSION != hardware_version
+		&& (!BMT_status.charger_exist || BMT_status.bat_charging_state == CHR_ERROR)) {
+		pr_warn("[%s] Last battery update >5h ago, update UI_SOC. %d->%ld SOC:%d\n",
+				__func__, BMT_status.UI_SOC,
+				BMT_status.UI_SOC - (time_after_last_update / 18000), BMT_status.SOC);
+		BMT_status.UI_SOC = BMT_status.UI_SOC - (time_after_last_update / 18000);
+		get_monotonic_boottime(&bat_time_last_update);
+		UI_SOC_updated = true;
+		mt_battery_update_status();
+	}
+
 	battery_charging_control(CHARGING_CMD_GET_IS_PCM_TIMER_TRIGGER, &is_pcm_timer_trigger);
 
 	if (is_pcm_timer_trigger == KAL_TRUE || bat_spm_timeout) {
@@ -4668,29 +4709,37 @@ static void battery_timer_resume(void)
 		battery_log(BAT_LOG_CRTI, "battery resume NOT by pcm timer!!\n");
 	}
 
-    /* add wwj */
-    #if defined(SOC_BY_EXT_HW_FG) && defined(CONFIG_MALATA_HARDWARE_VERSION)
-	    if(MATCH_BQ27520_HARDWARE_VERSION == hardware_version){
-           BMT_status.UI_SOC = battery_meter_get_battery_percentage();
-		   printk("---if defined bq27520,Sync UI_SOC immediately when battery_resume,BMT_status.UI_SOC=%d---\n",BMT_status.UI_SOC);
+//modified by xmwwy, update UI_SOC when system has gauge IC
+#if defined(SOC_BY_EXT_HW_FG)
+#if defined(CONFIG_MALATA_HARDWARE_VERSION)
+	if (MATCH_BQ27520_HARDWARE_VERSION == hardware_version)
+	{
+		ext_gauge_IC_update_SOC = KAL_TRUE;
+	}else{
+	    ext_gauge_IC_update_SOC = KAL_FALSE;
+		battery_log(BAT_LOG_CRTI, "---flag ext_gauge_IC_update_SOC is false!---\n");
+	}
+#else
+    ext_gauge_IC_update_SOC = KAL_FALSE;
+#endif
+#else
+    ext_gauge_IC_update_SOC = KAL_FALSE;
+#endif
+    battery_log(BAT_LOG_CRTI, "flag ext_gauge_IC_update_SOC=%d\n",(int)ext_gauge_IC_update_SOC);
+    if(ext_gauge_IC_update_SOC){
+	    if(bat_time_after_sleep.tv_sec - g_bat_time_before_sleep.tv_sec >= 20) {
+		  BMT_status.UI_SOC = battery_meter_get_battery_percentage();
+		  battery_log(BAT_LOG_CRTI, "ext_gauge_IC_update_SOC, Sync UI SOC to SOC immediately\n");
 	    }
-		else{
-			   if (g_call_state == CALL_ACTIVE &&
-		       (bat_time_after_sleep.tv_sec - g_bat_time_before_sleep.tv_sec >= batt_cust_data.talking_sync_time)) {
-		         /* phone call last than x min */
-		         BMT_status.UI_SOC = battery_meter_get_battery_percentage();
-		         battery_log(BAT_LOG_CRTI, "Sync UI SOC to SOC immediately\n");
-	           }
-		}
-	#else
+	}else{
 	    if (g_call_state == CALL_ACTIVE &&
 		   (bat_time_after_sleep.tv_sec - g_bat_time_before_sleep.tv_sec >= batt_cust_data.talking_sync_time)) {
 		   /* phone call last than x min */
 		   BMT_status.UI_SOC = battery_meter_get_battery_percentage();
+		   get_monotonic_boottime(&bat_time_last_update);
 		   battery_log(BAT_LOG_CRTI, "Sync UI SOC to SOC immediately\n");
 	    }
-	#endif
-    /* end wwj */
+	}
 
 	mutex_lock(&bat_mutex);
 
