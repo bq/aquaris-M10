@@ -1132,6 +1132,8 @@ static void bq27520_battery_update_work(struct work_struct *work)
 	if(whether_update_bq27520_firmware(df_version_cfg))
 	{
 		bq27520_update_firmware(df_version_cfg);
+	}else{
+		bq27520_update_flag = 7; //the same df_version, already latest!
 	}
 	
 }

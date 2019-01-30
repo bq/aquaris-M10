@@ -56,6 +56,7 @@ typedef enum {
 struct ltr303_priv {
     struct alsps_hw  hw;
     struct i2c_client *client;
+    struct work_struct  eint_work;
     struct mutex lock;
 
     /*misc*/
@@ -65,11 +66,18 @@ struct ltr303_priv {
     atomic_t    als_deb_on;     /*indicates if the debounce is on*/
     atomic_t    als_deb_end;    /*the jiffies representing the end of debounce*/
     atomic_t    als_suspend;
+    atomic_t    ps_debounce;    /*debounce time after enabling ps*/
+    atomic_t    ps_deb_on;      /*indicates if the debounce is on*/
+    atomic_t    ps_deb_end;     /*the jiffies representing the end of debounce*/
+    atomic_t    ps_suspend;
+    atomic_t    ps_thd_val_high;     /*the cmd value can't be read, stored in ram*/
+    atomic_t    ps_thd_val_low;     /*the cmd value can't be read, stored in ram*/
     atomic_t    trace;
     atomic_t    init_done;
 
     /*data*/
     u16         als;
+    u16          ps;
     u16         als_level_num;
     u16         als_value_num;
     u32         als_level[C_CUST_ALS_LEVEL-1];
@@ -77,6 +85,15 @@ struct ltr303_priv {
 
     ulong       enable;         /*enable mask*/
 };
+
+/*******Modify ALSPS detection issues***********/
+#define GN_MTK_BSP_PS_DYNAMIC_CALI
+static int final_prox_val , prox_val;
+static int intr_flag_value = 0;
+static bool readenable=true;
+static int ps_gainrange = 0;
+static int dynamic_calibrate=0;
+/********************END********************/
 
 static struct ltr303_priv *ltr303_obj = NULL;
 /*----------------------------------------------------------------------------*/
@@ -486,7 +503,7 @@ static int ltr303_als_register(void)
 exit_sensor_obj_attach_fail:
 	return err;
 }
-/*----------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
 static int ltr303_open(struct inode *inode, struct file *file)
 {
 	file->private_data = ltr303_i2c_client;
@@ -504,8 +521,371 @@ static int ltr303_release(struct inode *inode, struct file *file)
 	file->private_data = NULL;
 	return 0;
 }
+
+/*---------------------Modify ALSPS detection issues START-xmzml----------------------------*/
+static int ltr303_ps_read(void)
+{
+	int psval_lo, psval_hi, psdata;
+
+	psval_lo = ltr303_i2c_read_reg(LTR303_PS_DATA_0);
+	APS_DBG("ps_rawdata_psval_lo = %d\n", psval_lo);
+	if (psval_lo < 0){
+		APS_DBG("psval_lo error\n");
+		psdata = psval_lo;
+		goto out;
+	}
+	psval_hi = ltr303_i2c_read_reg(LTR303_PS_DATA_1);
+	APS_DBG("ps_rawdata_psval_hi = %d\n", psval_hi);
+
+	if (psval_hi < 0){
+	    APS_DBG("psval_hi error\n");
+		psdata = psval_hi;
+		goto out;
+	}
+	psdata = ((psval_hi & 7)* 256) + psval_lo;
+    //psdata = ((psval_hi&0x7)<<8) + psval_lo;
+	APS_DBG("ps_rawdata = %d\n", psdata);
+	prox_val = psdata;
+
+	out:
+	final_prox_val = psdata;
+	return psdata;
+}
+
+#ifdef GN_MTK_BSP_PS_DYNAMIC_CALI
+static ssize_t ltr303_dynamic_calibrate(void)
+{
+	int i=0;
+	int data;
+	int data_total=0;
+	ssize_t len = 0;
+	int noise = 0;
+	int count = 5;
+	int max = 0;
+	int error = 0;
+        int ps_thd_val_low;
+        int ps_thd_val_high ;
+	struct ltr303_priv *obj = ltr303_obj;
+	if(!ltr303_obj){
+		APS_ERR("ltr303_obj is null!!\n");
+		return -1;
+	}
+	msleep(15);
+	for (i = 0; i < count; i++) {
+		msleep(15);
+		data=ltr303_ps_read();
+		if (data < 0) {
+			i--;
+			continue;
+		}
+		if(data & 0x8000){
+			noise = 0;
+			break;
+		}else{
+			noise=data;
+		}
+		data_total+=data;
+		if (max++ > 100) {
+			return len;
+		}
+	}
+	noise=data_total/count;
+	dynamic_calibrate = noise;
+	if(noise < 100){
+		atomic_set(&obj->ps_thd_val_high,  noise+100);
+		atomic_set(&obj->ps_thd_val_low, noise+50);
+	}else if(noise < 200){
+		atomic_set(&obj->ps_thd_val_high,  noise+150);
+		atomic_set(&obj->ps_thd_val_low, noise+60);
+	}else if(noise < 300){
+		atomic_set(&obj->ps_thd_val_high,  noise+150);
+		atomic_set(&obj->ps_thd_val_low, noise+60);
+	}else if(noise < 400){
+		atomic_set(&obj->ps_thd_val_high,  noise+150);
+		atomic_set(&obj->ps_thd_val_low, noise+60);
+	}else if(noise < 600){
+		atomic_set(&obj->ps_thd_val_high,  noise+180);
+		atomic_set(&obj->ps_thd_val_low, noise+90);
+	}else if(noise < 1000){
+		atomic_set(&obj->ps_thd_val_high,  noise+300);
+		atomic_set(&obj->ps_thd_val_low, noise+180);
+	}else if(noise < 1250){
+		atomic_set(&obj->ps_thd_val_high,  noise+400);
+		atomic_set(&obj->ps_thd_val_low, noise+300);
+	}
+	else{
+		atomic_set(&obj->ps_thd_val_high,  1450);
+		atomic_set(&obj->ps_thd_val_low, 1000);
+		APS_ERR("ltr558 the proximity sensor structure is error\n");
+	}
+	ps_thd_val_low = atomic_read(&obj->ps_thd_val_low);
+	ps_thd_val_high = atomic_read(&obj->ps_thd_val_high);
+	APS_DBG("LTR-55X ps_thd_val_high=%d, ps_thd_val_low=%d\n.",ps_thd_val_high,ps_thd_val_low);
+
+	error = ltr303_i2c_write_reg(LTR303_PS_THRES_UP_0, ps_thd_val_high & 0xff);
+	if(error<0)
+	{
+		APS_LOG("ltr303_ps_enable setting LTR303_PS_THRES_UP_0 error \n");
+		 return error;
+	}
+	error = ltr303_i2c_write_reg(LTR303_PS_THRES_UP_1, (ps_thd_val_high>>8) & 0X07);
+	if(error<0)
+	{
+		APS_LOG("ltr303_ps_enable setting LTR303_PS_THRES_UP_1 error \n");
+		return error;
+	}
+	error = ltr303_i2c_write_reg(LTR303_PS_THRES_LOW_0, 0x0);
+	if(error<0)
+	{
+		APS_LOG("ltr303_ps_enable setting LTR303_PS_THRES_LOW_0 error \n");
+		return error;
+	}
+	error = ltr303_i2c_write_reg(LTR303_PS_THRES_LOW_1, 0x0);
+	if(error<0)
+	{
+		APS_LOG("ltr303_ps_enable setting LTR303_PS_THRES_LOW_1 error \n");
+		return error;
+	}
+	return 0;
+}
+#endif
+
+static int ltr303_init_device(void)
+{
+	int res;
+	int error = 0;
+	u8 databuf[2];
+
+	struct ltr303_priv *obj = ltr303_obj;
+	struct i2c_client *client = ltr303_obj->client;
+
+	ps_gainrange = PS_RANGE16;
+
+	als_gainrange = ALS_RANGE_1300;
+       APS_FUN();
+	error = ltr303_i2c_write_reg(LTR303_PS_LED, 0x11); // 0x1f=0001 1111;0x1b=0001 1011;0x1a=0001 1010;0x12=0001 0010;0x11=0001 0001;
+	if(error<0)
+	{
+		APS_LOG("ltr303_ps_enable setting LTR303_PS_LED error...\n");
+		return error;
+	}
+	error = ltr303_i2c_write_reg(LTR303_PS_N_PULSES, 0xa);
+	if(error<0)
+	{
+		APS_LOG("ltr303_ps_enable setting LTR303_PS_N_PULSES error..\n");
+		return error;
+	}
+	error = ltr303_i2c_write_reg(LTR303_PS_MEAS_RATE, 0x0);
+	if(error<0)
+	{
+		APS_LOG("ltr303_ps_enable setting LTR303_PS_MEAS_RATE error\n");
+		return error;
+	}
+	error = ltr303_i2c_write_reg(LTR303_ALS_MEAS_RATE, 0x02);
+	if(error<0)
+	{
+        APS_LOG("ltr303_ps_enable setting LTR303_ALS_MEAS_RATE error.\n");
+        return error;
+	}
+	/*for interrup work mode support */
+	if(0 == obj->hw.polling_mode_ps)
+	{
+		databuf[0] = LTR303_INTERRUPT;
+		databuf[1] = 0x01;
+		res = i2c_master_send(client, databuf, 0x2);
+		if(res <= 0)
+		{
+			APS_LOG("LTR303_INTERRUPT error: %x\n",res);
+			return LTR303_ERR_I2C;
+		}
+
+		databuf[0] = LTR303_INTERRUPT_PERSIST;
+		databuf[1] = 0x20;
+		res = i2c_master_send(client, databuf, 0x2);
+		if(res <= 0)
+		{
+			APS_LOG("LTR303_INTERRUPT_PERSIST error: %x\n",res);
+			return LTR303_ERR_I2C;
+		}
+	}
+#ifndef GN_MTK_BSP_PS_DYNAMIC_CALI
+	error = ltr303_i2c_write_reg(LTR303_PS_THRES_UP_0, ps_trigger_high & 0xff);
+	if(error<0)
+	{
+		APS_LOG("ltr303_ps_enable setting LTR303_PS_THRES_UP_0 error \n");
+		return error;
+	}
+	error = ltr303_i2c_write_reg(LTR303_PS_THRES_UP_1, (ps_trigger_high>>8) & 0X07);
+	if(error<0)
+	{
+		APS_LOG("ltr303_ps_enable setting LTR303_PS_THRES_UP_1 error \n");
+		return error;
+	}
+    	error = ltr303_i2c_write_reg(LTR303_PS_THRES_LOW_0, 0x0);
+	if(error<0)
+	{
+		APS_LOG("ltr303_ps_enable setting LTR303_PS_THRES_LOW_0 error \n");
+		return error;
+	}
+	error = ltr303_i2c_write_reg(LTR303_PS_THRES_LOW_1, 0x0);
+	if(error<0)
+	{
+		APS_LOG("ltr303_ps_enable setting LTR303_PS_THRES_LOW_1 error \n");
+		return error;
+	}
+#endif
+
+    mdelay(WAKEUP_DELAY);
+    return error;
+}
+
+/*
+ * ###############
+ * ## PS CONFIG ##
+ * ###############
+ */
 /*----------------------------------------------------------------------------*/
-static long ltr303_unlocked_ioctl(struct file *file, unsigned int cmd, unsigned long arg)       
+static int ltr303_ps_enable(int gainrange)
+{
+	int res;
+	int data;
+	int error;
+	int setgain;
+	APS_LOG("ltr303_ps_enable() ...start!\n");
+	readenable =true;
+	switch (gainrange) {
+		case PS_RANGE16:
+			setgain = MODE_PS_ON_Gain16;
+			break;
+
+		case PS_RANGE32:
+			setgain = MODE_PS_ON_Gain32;
+			break;
+
+		case PS_RANGE64:
+			setgain = MODE_PS_ON_Gain64;
+			break;
+
+
+		default:
+			setgain = MODE_PS_ON_Gain16;
+			break;
+	}
+
+	res = ltr303_init_device();
+	if (res < 0)
+	{
+	   APS_ERR("ltr303_init_devicet: %d\n", res);
+	   goto EXIT_ERR;
+	}
+
+	APS_LOG("LTR303_PS setgain = %d!\n",setgain);
+
+	error = ltr303_i2c_write_reg(LTR303_PS_CONTR, setgain);
+	if(error<0)
+	{
+	    APS_LOG("ltr303_ps_enable() error1\n");
+	    return error;
+	}
+
+	data = ltr303_i2c_read_reg(LTR303_PS_CONTR);
+	#ifdef GN_MTK_BSP_PS_DYNAMIC_CALI  
+	if (data & 0x02) {	
+		if (ltr303_dynamic_calibrate() < 0)
+			return -1;
+	}
+	#endif	
+
+ 	APS_LOG("ltr303_ps_enable ...OK!\n");
+
+	return error;
+
+	EXIT_ERR:
+	APS_ERR("set thres: %d\n", res);
+	return res;
+}
+
+/*----------------------------------------------------------------------------*/
+// Put PS into Standby mode
+static int ltr303_ps_disable(void)
+{
+	int error;
+	struct ltr303_priv *obj = ltr303_obj;
+	readenable =false;
+	error = ltr303_i2c_write_reg(LTR303_PS_CONTR, MODE_PS_StdBy);
+	if(error<0)
+		APS_LOG("ltr303_ps_disable ...ERROR\n");
+	else
+		APS_LOG("ltr303_ps_disable ...OK\n");
+
+	if(0 == obj->hw.polling_mode_ps)
+	{
+		cancel_work_sync(&obj->eint_work);
+	}
+
+	return error;
+}
+
+/*----------------------------------------------------------------------------*/
+static int ltr303_get_ps_value(struct ltr303_priv *obj, u16 ps)
+{
+	int val;
+	int invalid = 0;
+	static int val_temp = 1;
+	int ps_thd_val_high = atomic_read(&obj->ps_thd_val_high);
+	int ps_thd_val_low = atomic_read(&obj->ps_thd_val_low);
+
+	APS_DBG("ltr303_get_ps_value: - ps:%d ps_trigger_high:%d ps_trigger_low:%d\n",
+		    ps,ps_thd_val_high,ps_thd_val_low);
+	if((ps > ps_thd_val_high))
+	{
+		val = 0;  /*close*/
+		val_temp = 0;
+		intr_flag_value = 1;
+	} else if((ps < ps_thd_val_low)) {
+		val = 1;  /*far away*/
+		val_temp = 1;
+		intr_flag_value = 0;
+	} else {
+		val = val_temp;	
+	}
+
+	if(atomic_read(&obj->ps_suspend))
+	{
+		invalid = 1;
+	}
+	else if(1 == atomic_read(&obj->ps_deb_on))
+	{
+		unsigned long endt = atomic_read(&obj->ps_deb_end);
+		if(time_after(jiffies, endt))
+		{
+			atomic_set(&obj->ps_deb_on, 0);
+		}
+
+		if (1 == atomic_read(&obj->ps_deb_on))
+		{
+			invalid = 1;
+		}
+	}
+	else if (obj->als > 50000)
+	{
+		//invalid = 1;
+		APS_DBG("ligh too high will result to failt proximiy\n");
+		return 1;  /*far away*/
+	}
+
+	if(!invalid)
+	{
+		APS_DBG("PS:  %05d => %05d\n", ps, val);
+		return val;
+	}
+	else
+	{
+		return -1;
+	}
+}
+
+static long ltr303_unlocked_ioctl(struct file *file, unsigned int cmd, unsigned long arg)//xmzml
 {
 	struct i2c_client *client = (struct i2c_client*)file->private_data;
 	struct ltr303_priv *obj = i2c_get_clientdata(client);  
@@ -514,29 +894,103 @@ static long ltr303_unlocked_ioctl(struct file *file, unsigned int cmd, unsigned 
 	int dat;
 	uint32_t enable;
 	APS_DBG("ltr303_unlocked_ioctl cmd= %d\n", cmd); 
-	switch (cmd) {
-	case ALSPS_SET_ALS_MODE:
-		if (copy_from_user(&enable, ptr, sizeof(enable))) {
-			err = -EFAULT;
-			goto err_out;
-		}
-		if (enable) {
-			err = ltr303_als_enable(als_gainrange);
-			if (err) {
-				APS_ERR("enable als fail: %d\n", err);
+	switch (cmd)
+	{
+		case ALSPS_SET_PS_MODE:
+			if(copy_from_user(&enable, ptr, sizeof(enable)))
+			{
+				err = -EFAULT;
 				goto err_out;
 			}
-			set_bit(CMC_BIT_ALS, &obj->enable);
-		}
-		else {
-			err = ltr303_als_disable();
-			if (err) {
-				APS_ERR("disable als fail: %d\n", err); 
+			if(enable)
+			{
+			    err = ltr303_ps_enable(ps_gainrange);
+				if(err < 0)
+				{
+					APS_ERR("enable ps fail: %d\n", err);
+					goto err_out;
+				}
+				set_bit(CMC_BIT_PS, &obj->enable);
+			}
+			else
+			{
+			    err = ltr303_ps_disable();
+				if(err < 0)
+				{
+					APS_ERR("disable ps fail: %d\n", err);
+					goto err_out;
+				}
+				clear_bit(CMC_BIT_PS, &obj->enable);
+			}
+			break;
+
+		case ALSPS_GET_PS_MODE:
+			enable = test_bit(CMC_BIT_PS, &obj->enable) ? (1) : (0);
+			if(copy_to_user(ptr, &enable, sizeof(enable)))
+			{
+				err = -EFAULT;
 				goto err_out;
 			}
-			clear_bit(CMC_BIT_ALS, &obj->enable);
-		}
-		break;
+			break;
+
+		case ALSPS_GET_PS_DATA:
+			APS_DBG("ALSPS_GET_PS_DATA\n");
+		    obj->ps = ltr303_ps_read();
+			if(obj->ps < 0)
+			{
+				goto err_out;
+			}
+			dat = ltr303_get_ps_value(obj, obj->ps);
+			if(copy_to_user(ptr, &dat, sizeof(dat)))
+			{
+				err = -EFAULT;
+				goto err_out;
+			}
+			break;
+
+		case ALSPS_GET_PS_RAW_DATA:
+			#if 1
+			obj->ps = ltr303_ps_read();
+			if(obj->ps < 0)
+			{
+				goto err_out;
+			}
+			dat = obj->ps;
+			#endif
+			if(copy_to_user(ptr, &dat, sizeof(dat)))
+			{
+				err = -EFAULT;
+				goto err_out;
+			}
+			break;
+
+		case ALSPS_SET_ALS_MODE:
+			if(copy_from_user(&enable, ptr, sizeof(enable)))
+			{
+				err = -EFAULT;
+				goto err_out;
+			}
+			if(enable)
+			{
+			    err = ltr303_als_enable(als_gainrange);
+				if(err < 0)
+				{
+					APS_ERR("enable als fail: %d\n", err);
+					goto err_out;
+				}
+				set_bit(CMC_BIT_ALS, &obj->enable);
+			}
+			else
+			{
+			    err = ltr303_als_disable();
+				if(err < 0)
+				{
+					APS_ERR("disable als fail: %d\n", err);
+					goto err_out;
+				}
+				clear_bit(CMC_BIT_ALS, &obj->enable);
+			}
+			break;
 
 	case ALSPS_GET_ALS_MODE:
 		enable = test_bit(CMC_BIT_ALS, &obj->enable) ? (1) : (0);
@@ -581,7 +1035,8 @@ static long ltr303_unlocked_ioctl(struct file *file, unsigned int cmd, unsigned 
 err_out:
 	return err;
 }
-/*----------------------------------------------------------------------------*/
+/*---------------------Modify ALSPS detection issues END-xmzml----------------------------*/
+
 static struct file_operations ltr303_fops = {
 	.owner = THIS_MODULE,
 	.open = ltr303_open,
