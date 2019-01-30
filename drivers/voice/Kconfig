@@ -1,0 +1,12 @@
+#
+# Voice configuration
+#
+
+config VOICE
+	bool "VOICE MODULE SUPPORT"
+	default n
+    help
+        If you say Y, enable voice module support.
+
+source "drivers/voice/iflytek/Kconfig"
+

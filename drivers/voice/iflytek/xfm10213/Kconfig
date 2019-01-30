@@ -1,0 +1,3 @@
+config IFLYTEK_XFM10213
+	bool "iflytek xfm10213 module"
+	default n

@@ -1,0 +1,1 @@
+../../../arm64/boot/dts/mt8163-pinfunc.h

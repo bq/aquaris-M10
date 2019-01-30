@@ -1,0 +1,1 @@
+obj-$(CONFIG_MTK_SI7006)		+=	si7006/

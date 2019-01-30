@@ -1,0 +1,7 @@
+config IFLYTEK
+	bool "iflytek module support"
+	default n
+
+source "drivers/voice/iflytek/xfm10211/Kconfig"
+source "drivers/voice/iflytek/xfm10213/Kconfig"
+source "drivers/voice/iflytek/xfm10412/Kconfig"

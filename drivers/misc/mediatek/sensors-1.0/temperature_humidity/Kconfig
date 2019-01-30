@@ -1,0 +1,7 @@
+config CUSTOM_KERNEL_TEM_HUM
+	bool "CUSTOM KERNEL TEM & HUM Config"
+	help
+		temperature & humidity support
+
+source "drivers/misc/mediatek/sensors-1.0/temperature_humidity/si7006/Kconfig"
+

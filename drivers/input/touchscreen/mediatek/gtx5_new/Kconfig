@@ -1,0 +1,36 @@
+#
+# Goodix touchscreen driver configuration
+#
+menuconfig TOUCHSCREEN_GOODIX_GTX5_NEW
+	bool "Goodix GTx5 touchscreen"
+	depends on I2C
+	default n
+	help
+	  Say Y here if you have a Goodix GTx5xx touchscreen connected
+	  to your system.
+
+	  If unsure, say N.
+
+if TOUCHSCREEN_GOODIX_GTX5_NEW
+
+config TOUCHSCREEN_GOODIX_GTX5_UPDATE_NEW
+	tristate "Goodix GTx5 firmware update module"
+	default n
+	help
+	  Say Y here to enable support for doing firmware update.
+
+	  If unsure, say N.
+
+	  To compile this driver as a module, choose M here.
+
+config TOUCHSCREEN_GOODIX_GTX5_TOOLS_NEW
+	tristate "Goodix touch tools support"
+	default n
+	help
+	  Say Y here to enable debug tools.
+
+	  If unsure, say N.
+
+	  To compile this driver as a module, choose M here.
+
+endif

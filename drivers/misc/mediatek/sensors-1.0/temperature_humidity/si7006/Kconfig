@@ -1,0 +1,7 @@
+#
+# temperature sensor drivers configuration
+#
+
+config MTK_SI7006
+  bool "temperature&humidity sensor si7006"
+  default n
