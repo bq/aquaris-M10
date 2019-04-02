@@ -47,7 +47,7 @@ ROOT_NODE {
 	eint-debounce = <256>;
 	accdet-gpio = <&pio 26 0>;
 	accdet-mic-vol = <7>;
-	headset-mode-setting = <0x900 0x400 1 0x3f0 0x800 0x800 0x20>;
+	headset-mode-setting = <0x900 0x400 1 0x3f0 0x8000 0x800 0x20>;
 	accdet-plugout-debounce = <20>;
 	/*1:ACC mode, 2:low cost without in bias, 6:low cost with in bias*/
 	accdet-mic-mode = <1>;

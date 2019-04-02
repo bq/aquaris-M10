@@ -15,6 +15,7 @@
 #define __SMI_PRIV_H__
 
 #include "smi_reg.h"
+#include <linux/atomic.h>
 
 #define SMI_LARB_PORT_NR_MAX  21/* Max port num in current platform.*/
 struct mtk_smi_priv;
@@ -34,7 +35,7 @@ struct mtk_smi_data {
 	const struct mtk_smi_priv *smi_priv;
 	unsigned long smi_common_base;
 	unsigned long larb_base[SMI_LARB_NR_MAX];
-	int larbref[SMI_LARB_NR_MAX];
+	atomic_t larbref[SMI_LARB_NR_MAX];
 
 	/*record the larb port register, please use the max value*/
 	unsigned short int larb_port_backup[SMI_LARB_PORT_NR_MAX * SMI_LARB_NR_MAX];

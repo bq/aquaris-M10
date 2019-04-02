@@ -416,6 +416,7 @@ static int ion_mm_heap_phys(struct ion_heap *heap, struct ion_buffer *buffer,
 	}
 	/* Allocate MVA */
 
+	mutex_lock(&buffer->lock);
 	if (pBufferInfo->MVA == 0) {
 		int ret = m4u_alloc_mva_sg(pBufferInfo->eModuleID, buffer->sg_table,
 				buffer->size, pBufferInfo->security, pBufferInfo->coherent,
@@ -424,11 +425,13 @@ static int ion_mm_heap_phys(struct ion_heap *heap, struct ion_buffer *buffer,
 		if (ret < 0) {
 			pBufferInfo->MVA = 0;
 			IONMSG("[ion_mm_heap_phys]: Error. Allocate MVA failed.\n");
+			mutex_unlock(&buffer->lock);
 			return -EFAULT;
 		}
 	}
 	*(unsigned int *) addr = pBufferInfo->MVA; /* MVA address */
 	*len = buffer->size;
+	mutex_unlock(&buffer->lock);
 
 	return 0;
 }

@@ -192,7 +192,7 @@ int mtk_smi_larb_clock_on(int larbid, bool pm)
 	if (ret)
 		return ret;
 
-	smi_data->larbref[larbid]++;
+	atomic_inc(&(smi_data->larbref[larbid]));
 
 	return ret;
 }
@@ -202,11 +202,13 @@ void mtk_smi_larb_clock_off(int larbid, bool pm)
 	if (!smi_data || larbid < 0 || larbid >= smi_data->larb_nr)
 		return;
 
-	if (smi_data->larbref[larbid] <= 0)
-		SMIMSG("larb ref <=0, larb %d ref %d\n", larbid, smi_data->larbref[larbid]);
+	if ((int)atomic_read(&(smi_data->larbref[larbid])) <= 0)
+		SMIMSG("larb ref <=0, larb %d ref %d\n", larbid, (int)atomic_read(&(smi_data->larbref[larbid])));
+
+	atomic_dec(&(smi_data->larbref[larbid]));
+
 	if (!smi_clk_always_on)
 		_mtk_smi_larb_put(smi_data->larb[larbid], pm);
-	smi_data->larbref[larbid]--;
 }
 
 static void backup_smi_common(void)
@@ -1111,6 +1113,7 @@ static int mtk_smi_larb_probe(struct platform_device *pdev)
 	smi_data->larb_base[larbid] = (unsigned long)larbpriv->base;
 	smi_data->larb[larbid] = dev;
 	smi_data->larb_nr++;
+	atomic_set(&(smi_data->larbref[larbid]), 0);
 
 	SMIMSG("larb %d-cnt %d probe done\n", larbid, smi_data->larb_nr);
 
